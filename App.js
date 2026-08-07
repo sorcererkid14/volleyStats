@@ -501,9 +501,11 @@ function getHighlightIds(touchCount, servingUs, rotIdx, lineup, touches = [], op
   const action = inferNextAction(touchCount, servingUs);
   let roles = [];
 
-  // If last non-block touch was an opponent attack → highlight our blockers
+  // If last non-block touch was an opponent attack:
+  // - Front row → amber (blockers, handled by getBlockerIds)
+  // - Back row → green (receivers, shown here)
   if (action === 'receive' && lastTouchWasOppAttack(touches)) {
-    return BLOCKERS[rotIdx].map(r => byRole[r]).filter(Boolean);
+    return BACK_ROW[rotIdx].map(r => byRole[r]).filter(Boolean);
   }
 
   if (action === 'spin' || action === 'float') {
@@ -534,6 +536,17 @@ function getHighlightIds(touchCount, servingUs, rotIdx, lineup, touches = [], op
 function lastTouchWasOppAttack(touches) {
   const last = lastNonBlockTouch(touches);
   return last && last.team === 'opp' && last.action === 'attack';
+}
+
+// Returns front row blocker IDs (highlighted amber) when opponent attacks
+function getBlockerIds(touchCount, servingUs, rotIdx, lineup, touches) {
+  if (!isOurTouch(touchCount, servingUs)) return [];
+  const action = inferNextAction(touchCount, servingUs);
+  if (action !== 'receive') return [];
+  if (!lastTouchWasOppAttack(touches)) return [];
+  const byRole = {};
+  lineup.forEach(p => { byRole[p.roleLabel] = p.id; });
+  return BLOCKERS[rotIdx].map(r => byRole[r]).filter(Boolean);
 }
 
 // ── OPP HIGHLIGHT TABLES ─────────────────────────────────────────────────────
@@ -595,6 +608,8 @@ function getOppHighlightIds(touchCount, servingUs, rotIdx, oppLineup, touches, o
 
   return roles.map(r => byRole[r]).filter(Boolean);
 }
+
+const SUB_LIMIT = 6;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HOME SCREEN
@@ -1156,6 +1171,7 @@ export default function App() {
   // Rally state
   const [rallyActive,   setRallyActive]   = useState(false);
   const [touches,       setTouches]       = useState([]);
+  const touchesRef = useRef([]);
   const [pendingFrom,   setPendingFrom]   = useState(null);
   const [arrows,        setArrows]        = useState([]);
   const [popup,         setPopup]         = useState(null);
@@ -1168,6 +1184,18 @@ export default function App() {
   // oppServed: true once the opponent server has been tapped (when they serve)
   // triggers switch from highlighting their server to highlighting our receivers
   const [oppServed, setOppServed] = useState(false);
+  // afterTouchBlock: true when last touch was a touch block (quality 1/2)
+  // signals that next touch should be opponent receiving the deflected ball
+  const [afterTouchBlock, setAfterTouchBlock] = useState(false);
+
+  // ── SUBSTITUTIONS ────────────────────────────────────────────────────────────
+  const [subModal, setSubModal]       = useState(false);
+  const [subsUsed, setSubsUsed]       = useState(0);    // resets each set
+  const [subLog,   setSubLog]         = useState([]);   // [{outId, inId, score, set}]
+  const [subOutPlayer, setSubOutPlayer] = useState(null); // player being subbed out
+
+  // Keep touchesRef in sync with touches state
+  useEffect(() => { touchesRef.current = touches; }, [touches]);
 
   // Determine which formation to show for our team
   // Our formation:
@@ -1204,8 +1232,9 @@ export default function App() {
     if (!setter) return lineupRaw;
 
     if (isOur) {
-      // Our setter: already in front row (y <= 0.55) → no move needed
-      if (setter.xy.y <= 0.55) return lineupRaw;
+      // Our setter: already in front row (y <= 0.70) → no move needed
+      // Front row y=0.625, back row y=0.875, threshold between them
+      if (setter.xy.y <= 0.70) return lineupRaw;
       // Target: between front-middle and front-right, near net
       return lineupRaw.map(p =>
         p.roleLabel === 'S'
@@ -1241,17 +1270,20 @@ export default function App() {
   // Use non-block touch count for sequence logic (blocks don't consume touches)
   const nonBlockCount = rallyActive ? countNonBlockTouches(touches) : 0;
 
-  // Our team highlight IDs
-  const highlightIds = getHighlightIds(
-    rallyActive ? nonBlockCount : 0,
-    servingUs, ourRotation, ourLineup, touches, oppServed
-  );
+  // Our team highlight IDs (green = receivers/setter/attacker)
+  const highlightIds = afterTouchBlock
+    ? BACK_ROW[ourRotation].map(r => ourLineup.find(p => p.roleLabel === r)?.id).filter(Boolean)
+    : getHighlightIds(rallyActive ? nonBlockCount : 0, servingUs, ourRotation, ourLineup, touches, oppServed);
 
-  // Opponent highlight IDs
-  const oppHighlightIds = getOppHighlightIds(
-    rallyActive ? nonBlockCount : 0,
-    servingUs, oppRotation, oppLineup, touches, oppServed
-  );
+  // Our team blocker IDs (amber = front row should block)
+  const blockerIds = afterTouchBlock
+    ? []
+    : getBlockerIds(rallyActive ? nonBlockCount : 0, servingUs, ourRotation, ourLineup, touches);
+
+  // Opponent highlight IDs — after touch block highlight their back row too
+  const oppHighlightIds = afterTouchBlock
+    ? OPP_BACK_ROW[oppRotation].map(r => oppLineup.find(p => p.roleLabel === r)?.id).filter(Boolean)
+    : getOppHighlightIds(rallyActive ? nonBlockCount : 0, servingUs, oppRotation, oppLineup, touches, oppServed);
 
   const stats = calcStats(rallies, ourRoster);
 
@@ -1263,13 +1295,16 @@ export default function App() {
     setRallyActive(true);
   }
 
-  function onPlayerTap(player, team, px, py) {
+  function onPlayerTap(player, team, px, py, touchesOverride) {
     // Auto-start rally on first player tap
     if (!rallyActive) {
       setTouches([]); setArrows([]); setPendingFrom(null); setPopup(null);
-      setReceivedFirst(false); setOppReceivedFirst(false); setOppServed(false);
+      setReceivedFirst(false); setOppReceivedFirst(false); setOppServed(false); setAfterTouchBlock(false);
       setRallyActive(true);
     }
+
+    // Use touchesOverride if provided (e.g. after logging opp touch synchronously)
+    const currentTouches = touchesOverride || touches;
 
     // Draw arrow from previous player if pendingFrom is set
     if (pendingFrom) {
@@ -1287,9 +1322,12 @@ export default function App() {
         return;
       }
 
+      // Clear touch block flag — opponent is now playing the ball
+      if (afterTouchBlock) setAfterTouchBlock(false);
+
       // Opponent: log instantly with no popup, action auto-inferred, no quality
       const touchIndex = touches.length;
-      const action = inferNextAction(touchIndex, servingUs);
+      const action = inferNextAction(countNonBlockTouches(touches), servingUs);
       const touch = {
         playerId:   player.id,
         playerNum:  player.num,
@@ -1301,6 +1339,7 @@ export default function App() {
       };
       const newTouches = [...touches, touch];
       setTouches(newTouches);
+      touchesRef.current = newTouches; // update synchronously so showPopup sees it
       setPendingFrom(player);
 
       // Switch opp formation after first receive of our serve
@@ -1308,11 +1347,11 @@ export default function App() {
         setOppReceivedFirst(true);
       }
 
-      // Check 4-touch violation
+      // Check 4-touch violation (blocks don't count)
       let consecutive = 0;
       for (let i = newTouches.length - 1; i >= 0; i--) {
-        if (newTouches[i].team === 'opp') consecutive++;
-        else break;
+        if (newTouches[i].team !== 'opp') break;
+        if (newTouches[i].action !== 'block') consecutive++;
       }
       if (consecutive >= 4) {
         setRallyEndModal({
@@ -1324,19 +1363,24 @@ export default function App() {
       }
     } else {
       // Our team: show popup for quality selection
-      showPopup(player, team, px, py);
+      // Clear touch block flag if set — our player is playing the deflected ball
+      if (afterTouchBlock) setAfterTouchBlock(false);
+      showPopup(player, team, px, py, currentTouches);
     }
   }
 
-  function showPopup(player, team, px, py) {
+  function showPopup(player, team, px, py, touchesSnapshot) {
     const isOur = team === 'our';
-    // Use non-block touch count so blocks don't shift the sequence
-    const nonBlockCount = countNonBlockTouches(touches);
+    // Use ref for most up-to-date touches (avoids React state batching lag)
+    const t = touchesSnapshot || touchesRef.current || touches;
+    const nonBlockCount = countNonBlockTouches(t);
     const action = inferNextAction(nonBlockCount, servingUs);
 
-    // Front row players on touch 1 can either receive or block
-    const isFrontRow = player.xy && player.xy.y <= 0.60;
-    const needsReceiveBlockChoice = action === 'receive' && isFrontRow && isOur;
+    // Front row players when opp attacks can receive or block
+    // Front row y = 0.625, back row y = 0.875 — threshold set between them
+    const isFrontRow = player.xy ? player.xy.y <= 0.75 : false;
+    const oppJustAttacked = lastTouchWasOppAttack(t);
+    const needsReceiveBlockChoice = action === 'receive' && isFrontRow && isOur && oppJustAttacked;
 
     setPopup({
       player, team, px, py,
@@ -1363,6 +1407,7 @@ export default function App() {
 
     const newTouches = [...touches, touch];
     setTouches(newTouches);
+    touchesRef.current = newTouches; // update synchronously
     setPopup(null);
 
     // First touch confirmed when receiving → switch to receiveBase formation
@@ -1377,8 +1422,7 @@ export default function App() {
     // ── BLOCK OUTCOMES ──────────────────────────────────────────────────────
     if (touch.action === 'block') {
       if (touch.quality === 3) {
-        // Stuff block — our point, end rally immediately
-        setArrows(prev => [...prev, { fromId: p.player.id, toType:'floor', toX: 0.5, toY: 0.2 }]);
+        // Stuff block — our point, end rally immediately (no arrow needed)
         setPendingFrom(null);
         setRallyEndModal({
           outcome: 'our',
@@ -1395,8 +1439,9 @@ export default function App() {
         });
       } else {
         // Touch block (quality 1 or 2) — ball deflected back to opponent
-        // Don't set pendingFrom — next tap should be opponent's touch
+        // Next tap should be opponent player receiving the deflected ball
         setPendingFrom(null);
+        setAfterTouchBlock(true);
       }
       return;
     }
@@ -1404,15 +1449,14 @@ export default function App() {
     setPendingFrom(p.player);
 
     // Check if this team has now touched the ball 4 times consecutively
-    // Count how many consecutive touches from this team at the end of the sequence
+    // Blocks don't count toward the 3-touch limit
     const team = touch.team;
     let consecutive = 0;
     for (let i = newTouches.length - 1; i >= 0; i--) {
-      if (newTouches[i].team === team) consecutive++;
-      else break;
+      if (newTouches[i].team !== team) break;
+      if (newTouches[i].action !== 'block') consecutive++;
     }
     if (consecutive >= 4) {
-      // 4 touches by same team = their fault, other team wins point
       const outcome  = team === 'our' ? 'them' : 'our';
       const teamName = team === 'our' ? 'Our team' : 'Opponent';
       setRallyEndModal({
@@ -1533,6 +1577,7 @@ export default function App() {
           ourName: gameState.ourName, theirName: gameState.theirName,
         });
         setRallies([]);
+        setSubsUsed(0); setSubLog([]);
       }
     } else {
       // No set won — just update scores
@@ -1548,6 +1593,7 @@ export default function App() {
     setReceivedFirst(false);
     setOppReceivedFirst(false);
     setOppServed(false);
+    setAfterTouchBlock(false);
     setRallyEndModal(null);
   }
 
@@ -1617,9 +1663,11 @@ export default function App() {
               ourLineup={ourLineup} oppLineup={oppLineup}
               touches={touches} arrows={arrows}
               pendingFrom={pendingFrom} highlightIds={highlightIds}
+              blockerIds={blockerIds}
               oppHighlightIds={oppHighlightIds}
               rallyActive={rallyActive} servingUs={servingUs}
               receivedFirst={receivedFirst}
+              afterTouchBlock={afterTouchBlock}
               onPlayerTap={onPlayerTap} onCourtTap={onCourtTap}
               onNetPress={onNetPress}
               popup={popup} setPopup={setPopup} confirmPopup={confirmPopup}
@@ -1643,6 +1691,8 @@ export default function App() {
               rallies={rallies} rallyActive={rallyActive}
               undoLastTouch={undoLastTouch}
               ourRotation={ourRotation}
+              subsUsed={subsUsed}
+              onSubPress={() => { setSubOutPlayer(null); setSubModal(true); }}
             />
           </View>
         )}
@@ -1774,6 +1824,132 @@ export default function App() {
         </View>
       </Modal>
 
+      {/* SUBSTITUTION MODAL */}
+      <Modal visible={subModal} transparent animationType="slide">
+        <View style={s.modalOverlay}>
+          <View style={[s.modalCard, {maxHeight:'85%', width:'95%', maxWidth:500}]}>
+            <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:14}}>
+              <Text style={s.modalTitle}>Substitution</Text>
+              <Text style={{color:C.amber, fontSize:12, fontFamily:'Barlow_500Medium'}}>
+                {SUB_LIMIT - subsUsed} of {SUB_LIMIT} remaining
+              </Text>
+            </View>
+
+            {!subOutPlayer ? (
+              <>
+                <Text style={[s.popupSectionLabel, {marginBottom:10}]}>
+                  {subOutPlayer ? 'SELECT PLAYER COMING ON' : 'SELECT PLAYER COMING OFF'}
+                </Text>
+                <ScrollView style={{maxHeight:300}}>
+                  {ourRoster.map(p => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={{flexDirection:'row', alignItems:'center', gap:12, padding:12,
+                        borderBottomWidth:1, borderBottomColor:C.border}}
+                      onPress={() => setSubOutPlayer(p)}
+                    >
+                      <View style={{width:40, height:40, borderRadius:20,
+                        backgroundColor: p.libero ? C.amber+'22' : C.accent+'22',
+                        borderWidth:1.5, borderColor: p.libero ? C.amber : C.accent,
+                        alignItems:'center', justifyContent:'center'}}>
+                        <Text style={{fontSize:13, fontWeight:'700',
+                          color: p.libero ? C.amber : C.accent, fontFamily:'Barlow_700Bold'}}>
+                          #{p.num}
+                        </Text>
+                      </View>
+                      <View style={{flex:1}}>
+                        <Text style={{color:C.text, fontSize:14, fontFamily:'Barlow_500Medium'}}>{p.name}</Text>
+                        <Text style={{color:C.muted, fontSize:11, fontFamily:'Barlow_400Regular'}}>{p.role} — on court</Text>
+                      </View>
+                      <Text style={{color:C.red, fontSize:12, fontFamily:'Barlow_500Medium'}}>Sub off →</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            ) : (
+              <>
+                <View style={{flexDirection:'row', alignItems:'center', gap:10, padding:10,
+                  backgroundColor:C.red+'11', borderRadius:8, marginBottom:12, borderWidth:1, borderColor:C.red+'44'}}>
+                  <Text style={{color:C.red, fontSize:13, fontFamily:'Barlow_500Medium'}}>
+                    #{subOutPlayer.num} {subOutPlayer.name} coming OFF
+                  </Text>
+                </View>
+                <Text style={[s.popupSectionLabel, {marginBottom:10}]}>SELECT PLAYER COMING ON</Text>
+                <ScrollView style={{maxHeight:250}}>
+                  {squad
+                    .filter(p => !ourRoster.find(r => r.id === p.id)) // bench players only
+                    .map(p => (
+                      <TouchableOpacity
+                        key={p.id}
+                        style={{flexDirection:'row', alignItems:'center', gap:12, padding:12,
+                          borderBottomWidth:1, borderBottomColor:C.border}}
+                        onPress={() => {
+                          // Perform substitution
+                          const newRoster = ourRoster.map(r =>
+                            r.id === subOutPlayer.id
+                              ? { ...p, role: subOutPlayer.role, pos: subOutPlayer.pos,
+                                  setter: subOutPlayer.setter, libero: subOutPlayer.libero }
+                              : r
+                          );
+                          setOurRoster(newRoster);
+                          setSubsUsed(n => n + 1);
+                          setSubLog(prev => [...prev, {
+                            outId: subOutPlayer.id, outNum: subOutPlayer.num, outName: subOutPlayer.name,
+                            inId: p.id, inNum: p.num, inName: p.name,
+                            role: subOutPlayer.role,
+                            score: `${gameState.ourScore}-${gameState.theirScore}`,
+                            set: gameState.currentSet,
+                          }]);
+                          setSubOutPlayer(null);
+                          setSubModal(false);
+                        }}
+                      >
+                        <View style={{width:40, height:40, borderRadius:20,
+                          backgroundColor:C.green+'22', borderWidth:1.5, borderColor:C.green,
+                          alignItems:'center', justifyContent:'center'}}>
+                          <Text style={{fontSize:13, fontWeight:'700', color:C.green, fontFamily:'Barlow_700Bold'}}>
+                            #{p.num}
+                          </Text>
+                        </View>
+                        <View style={{flex:1}}>
+                          <Text style={{color:C.text, fontSize:14, fontFamily:'Barlow_500Medium'}}>{p.name}</Text>
+                          <Text style={{color:C.muted, fontSize:11, fontFamily:'Barlow_400Regular'}}>bench</Text>
+                        </View>
+                        <Text style={{color:C.green, fontSize:12, fontFamily:'Barlow_500Medium'}}>→ Sub on</Text>
+                      </TouchableOpacity>
+                    ))}
+                </ScrollView>
+                <TouchableOpacity
+                  style={{marginTop:10, alignItems:'center'}}
+                  onPress={() => setSubOutPlayer(null)}
+                >
+                  <Text style={{color:C.dim, fontSize:12, fontFamily:'Barlow_400Regular'}}>← Back</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {/* Sub log */}
+            {subLog.length > 0 && (
+              <View style={{marginTop:12, borderTopWidth:1, borderTopColor:C.border, paddingTop:10}}>
+                <Text style={[s.popupSectionLabel, {marginBottom:6}]}>SUBS THIS SET</Text>
+                {subLog.filter(sub => sub.set === gameState.currentSet).map((sub, i) => (
+                  <Text key={i} style={{color:C.dim, fontSize:11, fontFamily:'Barlow_400Regular', marginBottom:3}}>
+                    #{sub.outNum} {sub.outName} → #{sub.inNum} {sub.inName} ({sub.role}) at {sub.score}
+                  </Text>
+                ))}
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={{marginTop:12, alignItems:'center'}}
+              onPress={() => { setSubModal(false); setSubOutPlayer(null); }}
+            >
+              <Text style={{color:C.muted, fontSize:12, fontFamily:'Barlow_400Regular'}}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* NET FAULT MODAL */}
       <Modal visible={netModal} transparent animationType="fade">
         <View style={s.modalOverlay}>
@@ -1858,13 +2034,20 @@ function ScoreBar({ gameState, servingUs, ourRotation }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // RALLY BAR
 // ─────────────────────────────────────────────────────────────────────────────
-function RallyBar({ touches, servingUs, pendingFrom, receivedFirst, undoLastTouch }) {
+function RallyBar({ touches, servingUs, pendingFrom, receivedFirst, undoLastTouch, afterTouchBlock }) {
   const nextAction = inferNextAction(countNonBlockTouches(touches), servingUs);
   const nextInfo   = ACTIONS[nextAction] || {};
   return (
     <View style={s.rallyBar}>
       <View style={s.liveDot} />
-      {pendingFrom ? (
+      {afterTouchBlock ? (
+        <View style={{flexDirection:'row', alignItems:'center', gap:6, flex:1}}>
+          <View style={[s.actionTag, {backgroundColor: C.amber+'22', borderColor: C.amber+'88'}]}>
+            <Text style={[s.actionTagText, {color: C.amber}]}>Touch Block</Text>
+          </View>
+          <Text style={s.rallyHint}>Tap whoever plays the deflected ball</Text>
+        </View>
+      ) : pendingFrom ? (
         <Text style={s.rallyHint} numberOfLines={1}>
           Tap player, court or NET for destination
         </Text>
@@ -1895,11 +2078,11 @@ function RallyBar({ touches, servingUs, pendingFrom, receivedFirst, undoLastTouc
 // COURT VIEW
 // ─────────────────────────────────────────────────────────────────────────────
 function CourtView({
-  ourLineup, oppLineup, touches, arrows, pendingFrom, highlightIds, oppHighlightIds,
+  ourLineup, oppLineup, touches, arrows, pendingFrom, highlightIds, blockerIds, oppHighlightIds,
   rallyActive, onPlayerTap, onCourtTap, onNetPress,
   popup, setPopup, confirmPopup,
   startRally, undoLastTouch, servingUs, setServingUs,
-  receivedFirst,
+  receivedFirst, afterTouchBlock,
   rallyEndModal, confirmRallyEnd, setRallyEndModal,
 }) {
   const [courtLayout, setCourtLayout] = useState({x:0, y:0, width:0, height:0});
@@ -1958,21 +2141,22 @@ function CourtView({
       {/* SERVE TOGGLE — always visible when rally not active */}
       {!rallyActive && (
         <View style={s.preRallyBar}>
-          <TouchableOpacity
-            style={[s.serveOpt, servingUs && s.serveOptSel]}
-            onPress={() => setServingUs(true)}
-          >
-            <Text style={[s.serveOptText, servingUs && {color:C.accent}]}>We Serve</Text>
-          </TouchableOpacity>
-          <View style={[s.bigBtn, {flex:2, backgroundColor: C.surface, borderWidth:1, borderColor:C.border}]}>
-            <Text style={[s.bigBtnText, {color:C.dim}]}>Tap a player to start</Text>
+            <TouchableOpacity
+              style={[s.serveOpt, servingUs && s.serveOptSel]}
+              onPress={() => setServingUs(true)}
+            >
+              <Text style={[s.serveOptText, servingUs && {color:C.accent}]}>We Serve</Text>
+            </TouchableOpacity>
+            <View style={[s.bigBtn, {flex:2, backgroundColor: C.surface, borderWidth:1, borderColor:C.border}]}>
+              <Text style={[s.bigBtnText, {color:C.dim}]}>Tap a player to start</Text>
+            </View>
+            <TouchableOpacity
+              style={[s.serveOpt, !servingUs && s.serveOptSelOpp]}
+              onPress={() => setServingUs(false)}
+            >
+              <Text style={[s.serveOptText, !servingUs && {color:C.oppTeam}]}>They Serve</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={[s.serveOpt, !servingUs && s.serveOptSelOpp]}
-            onPress={() => setServingUs(false)}
-          >
-            <Text style={[s.serveOptText, !servingUs && {color:C.oppTeam}]}>They Serve</Text>
-          </TouchableOpacity>
         </View>
       )}
 
@@ -1980,6 +2164,7 @@ function CourtView({
       {rallyActive && <RallyBar
         touches={touches} servingUs={servingUs} pendingFrom={pendingFrom}
         receivedFirst={receivedFirst} undoLastTouch={undoLastTouch}
+        afterTouchBlock={afterTouchBlock}
       />}
 
       {/* THE COURT */}
@@ -2079,8 +2264,9 @@ function CourtView({
           const isLast      = touches.length>0 && touches[touches.length-1]?.playerId===player.id;
           const isPending   = pendingFrom?.id === player.id;
           const isHighlight = highlightIds.includes(player.id);
-          // Dim non-highlighted players during a rally (unless last touched or pending)
-          const isDimmed    = rallyActive && !isHighlight && !isLast && !isPending;
+          const isBlocker   = blockerIds.includes(player.id);
+          // Dim non-highlighted, non-blocker players during a rally
+          const isDimmed    = rallyActive && !isHighlight && !isBlocker && !isLast && !isPending;
           return (
             <TouchableOpacity
               key={player.id}
@@ -2090,10 +2276,11 @@ function CourtView({
                 left:pos.x-33, top:pos.y-33,
                 borderColor: isPending ? C.amber
                   : isHighlight ? C.green
+                  : isBlocker ? C.amber
                   : isLast ? C.accent
                   : player.libero ? C.amber
                   : C.muted,
-                borderWidth: isPending || isHighlight || isLast ? 2.5 : 1,
+                borderWidth: isPending || isHighlight || isBlocker || isLast ? 2.5 : 1,
                 opacity: isDimmed ? 0.35 : 1,
               }]}
               onPress={(e) => { e.stopPropagation(); onPlayerTap(player,'our',pos.x,pos.y); }}
@@ -2103,9 +2290,9 @@ function CourtView({
               {player.runningToSet && (
                 <View style={[s.rolePip, {backgroundColor:C.amber, top:undefined, bottom:2, left:2, right:undefined}]} />
               )}
-              <Text style={[s.playerNum, {color: isHighlight ? C.green : player.runningToSet ? C.amber : player.libero ? C.amber : C.ourTeam}]}>#{player.num}</Text>
+              <Text style={[s.playerNum, {color: isHighlight ? C.green : isBlocker ? C.amber : player.runningToSet ? C.amber : player.libero ? C.amber : C.ourTeam}]}>#{player.num}</Text>
               <Text style={s.playerName}>{player.name}</Text>
-              <Text style={[s.playerPos, {color: isHighlight ? C.green+'BB' : player.runningToSet ? C.amber+'BB' : player.libero ? C.amber+'BB' : C.ourTeam+'99'}]}>{player.roleLabel || player.pos}</Text>
+              <Text style={[s.playerPos, {color: isHighlight ? C.green+'BB' : isBlocker ? C.amber+'BB' : player.runningToSet ? C.amber+'BB' : player.libero ? C.amber+'BB' : C.ourTeam+'99'}]}>{player.roleLabel || player.pos}</Text>
             </TouchableOpacity>
           );
         })}
@@ -2295,7 +2482,7 @@ function OurPopup({ popup, setPopup, confirmPopup }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SIDE STATS
 // ─────────────────────────────────────────────────────────────────────────────
-function SideStats({ gameState, stats, roster, touches, rallies, rallyActive, undoLastTouch, ourRotation }) {
+function SideStats({ gameState, stats, roster, touches, rallies, rallyActive, undoLastTouch, ourRotation, subsUsed, onSubPress }) {
   const [tab, setTab] = useState('stats');
   const our   = rallies.filter(r=>r.outcome==='our').length;
   const them  = rallies.filter(r=>r.outcome==='them').length;
@@ -2423,6 +2610,32 @@ function SideStats({ gameState, stats, roster, touches, rallies, rallyActive, un
           </>
         )}
       </ScrollView>
+
+      {/* Sub button at bottom of side panel */}
+      {!rallyActive && (
+        <TouchableOpacity
+          style={{
+            margin:10, padding:12, borderRadius:10,
+            borderWidth:1.5,
+            borderColor: subsUsed >= SUB_LIMIT ? C.muted : C.amber,
+            backgroundColor: subsUsed >= SUB_LIMIT ? C.surface : C.amber+'11',
+            flexDirection:'row', alignItems:'center', justifyContent:'center', gap:8,
+            opacity: subsUsed >= SUB_LIMIT ? 0.5 : 1,
+          }}
+          onPress={() => { if (subsUsed < SUB_LIMIT) onSubPress(); }}
+          disabled={subsUsed >= SUB_LIMIT}
+        >
+          <Text style={{fontSize:13, fontWeight:'600', color: subsUsed >= SUB_LIMIT ? C.muted : C.amber, fontFamily:'Barlow_600SemiBold'}}>
+            ⇄  Substitution
+          </Text>
+          <View style={{paddingHorizontal:7, paddingVertical:2, borderRadius:8,
+            backgroundColor: subsUsed >= SUB_LIMIT ? C.muted+'22' : C.amber+'33'}}>
+            <Text style={{fontSize:11, color: subsUsed >= SUB_LIMIT ? C.muted : C.amber, fontFamily:'Barlow_600SemiBold'}}>
+              {SUB_LIMIT - subsUsed} left
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={s.undoBarBtn} onPress={undoLastTouch}>
         <Text style={s.undoBarText}>↩ Undo Last Action</Text>
