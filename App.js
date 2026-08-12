@@ -79,28 +79,20 @@ const QUALITY_LABELS = ['Error', 'Poor', 'Good', 'Perfect'];
 // role field distinguishes O1/O2 and M1/M2 within each position group.
 // O1 = Smith #3, O2 = Patel #9, M1 = Jones #5, M2 = Okafor #11
 // Fallback roster used only if no saved squad exists
-const DEFAULT_OUR_ROSTER = [
-  { id: 'o1', num: 1,  name: 'Martin', pos: 'S',   role: 'S',   setter: true },
-  { id: 'o2', num: 3,  name: 'Smith',  pos: 'OH',  role: 'O1' },
-  { id: 'o3', num: 5,  name: 'Jones',  pos: 'MB',  role: 'M1' },
-  { id: 'o4', num: 7,  name: 'Adams',  pos: 'OPP', role: 'OPP' },
-  { id: 'o5', num: 9,  name: 'Patel',  pos: 'OH',  role: 'O2' },
-  { id: 'o6', num: 11, name: 'Okafor', pos: 'MB',  role: 'M2' },
-  { id: 'o7', num: 2,  name: 'Chen',   pos: 'L',   role: 'L',   libero: true },
-];
+const DEFAULT_OUR_ROSTER = [];
 
 // Storage keys
 const STORAGE_SQUAD  = '@vb_squad';
 const STORAGE_MATCH  = '@vb_last_match';
 
 const DEFAULT_OPP_ROSTER = [
-  { id: 'p1', num: 4,  name: '', pos: 'S',   role: 'S',   setter: true },
-  { id: 'p2', num: 9,  name: '', pos: 'OH',  role: 'O1' },
-  { id: 'p3', num: 2,  name: '', pos: 'MB',  role: 'M1' },
-  { id: 'p4', num: 6,  name: '', pos: 'OPP', role: 'OPP' },
-  { id: 'p5', num: 8,  name: '', pos: 'OH',  role: 'O2' },
-  { id: 'p6', num: 5,  name: '', pos: 'MB',  role: 'M2' },
-  { id: 'p7', num: 3,  name: '', pos: 'L',   role: 'L',   libero: true },
+  { id: 'p1', num: 1,  name: '', pos: 'S',   role: 'S',   setter: true },
+  { id: 'p2', num: 2,  name: '', pos: 'OH',  role: 'O1' },
+  { id: 'p3', num: 3,  name: '', pos: 'MB',  role: 'M1' },
+  { id: 'p4', num: 4,  name: '', pos: 'OPP', role: 'OPP' },
+  { id: 'p5', num: 5,  name: '', pos: 'OH',  role: 'O2' },
+  { id: 'p6', num: 6,  name: '', pos: 'MB',  role: 'M2' },
+  { id: 'p7', num: 7,  name: '', pos: 'L',   role: 'L',   libero: true },
 ];
 
 // ── ROTATION SYSTEM ──────────────────────────────────────────────────────────
@@ -125,18 +117,19 @@ const DEFAULT_OPP_ROSTER = [
 // Libero swap: Rot 1,2,4,5 = L replaces M1/M2; Rot 3,6 = no swap
 
 const OPP_BASE_SLOTS = [
-  // Rot 1: Front: O1(right) M2(mid) OPP(left) | Back: L(right) O2(mid) S(left)
+  // Mirrored from our BASE_SLOTS (x flipped: our 1/6→5/6, our 5/6→1/6)
+  // Rot 1: Front: O1(5/6) M2(3/6) OPP(1/6) | Back: L(5/6) O2(3/6) S(1/6)
   { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
-  // Rot 2: Front: O2(right) M2(mid) OPP(left) | Back: L(right) O1(mid) S(left)
+  // Rot 2: Front: O2(5/6) M2(3/6) OPP(1/6) | Back: L(5/6) O1(3/6) S(1/6)
   { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
-  // Rot 3: Front: O2(right) M1(mid) OPP(left) | Back: M2(right) O1(mid) S(left) — no libero
+  // Rot 3: Front: O2(5/6) M1(3/6) OPP(1/6) | Back: M2(5/6) O1(3/6) S(1/6) — no libero
   { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, M2:{x:5/6,y:0.125} },
-  // Rot 4: Front: O2(right) M1(mid) S(left)   | Back: L(right) O1(mid) OPP(left)
-  { S:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125}, O2:{x:1/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:1/6,y:0.125} },
-  // Rot 5: Front: O1(right) M1(mid) S(left)   | Back: L(right) O2(mid) OPP(left)
-  { S:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O1:{x:1/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:3/6,y:0.375}, L:{x:1/6,y:0.125} },
-  // Rot 6: Front: O1(right) M2(mid) S(left)   | Back: M1(right) O2(mid) OPP(left) — no libero
-  { S:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O1:{x:1/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:1/6,y:0.125}, M2:{x:3/6,y:0.375} },
+  // Rot 4: Front: S(1/6) M1(3/6) O2(5/6) | Back: OPP(1/6) O1(3/6) L(5/6)
+  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
+  // Rot 5: Front: S(1/6) M1(3/6) O1(5/6) | Back: OPP(1/6) O2(3/6) L(5/6)
+  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
+  // Rot 6: Front: S(1/6) M2(3/6) O1(5/6) | Back: OPP(1/6) O2(3/6) M1(5/6) — no libero
+  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
 ];
 
 // Opp serve receive — mirrored from our RECEIVE_SLOTS
@@ -161,17 +154,17 @@ const OPP_RECEIVE_SLOTS = [
 // front row y=0.375, back row y=0.125
 // x: left=1/6, mid=3/6, right=5/6 BUT mirrored so col0=right=5/6
 const OPP_RECEIVE_BASE_SLOTS = [
-  // Rot 1: Front: OPP M2 O1 | Back: L O2 S (OPP/O1 swapped vs base)
-  { OPP:{x:5/6,y:0.375}, M2:{x:3/6,y:0.375}, O1:{x:1/6,y:0.375}, L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
-  // Rot 2: Front: O2 M2 OPP | Back: L O1 S
-  { S:{x:1/6,y:0.125}, OPP:{x:5/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
-  // Rot 3: Front: O2 M1 OPP | Back: L O1 S
-  { S:{x:1/6,y:0.125}, OPP:{x:5/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
-  // Rot 4: Front: O2 M1 S | Back: L O1 OPP
-  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
-  // Rot 5: Front: O1 M1 S | Back: L O2 OPP
-  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
-  // Rot 6: Front: O1 M2 S | Back: L O2 OPP
+  // Rot 1: Front: OPP(left) M2(mid) O1(right) | Back: L(right) O2(mid) S(left)
+  { OPP:{x:1/6,y:0.375}, M2:{x:3/6,y:0.375}, O1:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
+  // Rot 2: Front: O2(right) M2(mid) OPP(left) | Back: L(right) O1(mid) S(left)
+  { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
+  // Rot 3: Front: O2(right) M1(mid) OPP(left) | Back: L(right) O1(mid) S(left)
+  { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
+  // Rot 4: Front: O2(right) M1(mid) S(left) | Back: L(right) O1(mid) OPP(left)
+  { S:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125}, O2:{x:1/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:1/6,y:0.125} },
+  // Rot 5: Front: O1(right) M1(mid) S(left) | Back: L(right) O2(mid) OPP(left)
+  { S:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O1:{x:1/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:3/6,y:0.375}, L:{x:1/6,y:0.125} },
+  // Rot 6: Front: S(left=1/6) M2(mid) O1(right=5/6) | Back: OPP(right) O2(mid) L(left)
   { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
 ];
 
@@ -183,13 +176,13 @@ const BASE_SLOTS = [
   { S:{r:1,c:2}, OPP:{r:0,c:2}, O1:{r:0,c:0}, O2:{r:1,c:1}, L:{r:1,c:0},  M2:{r:0,c:1} },
   // Rot 2: Front: O2 M2 OPP | Back: L  O1 S   (L replaces M1)
   { S:{r:1,c:2}, OPP:{r:0,c:2}, O1:{r:1,c:1}, O2:{r:0,c:0}, L:{r:1,c:0},  M2:{r:0,c:1} },
-  // Rot 3: Front: O2 M1 OPP | Back: M2 O1 S   (no libero swap)
+  // Rot 3: Front: O2 M1 OPP | Back: M2 O1 S   (M2 serving from back, no libero)
   { S:{r:1,c:2}, OPP:{r:0,c:2}, O1:{r:1,c:1}, O2:{r:0,c:0}, M1:{r:0,c:1}, M2:{r:1,c:0} },
   // Rot 4: Front: O2 M1 S   | Back: L  O1 OPP (L replaces M2)
   { S:{r:0,c:2}, OPP:{r:1,c:2}, O1:{r:1,c:1}, O2:{r:0,c:0}, M1:{r:0,c:1}, L:{r:1,c:0}  },
   // Rot 5: Front: O1 M1 S   | Back: L  O2 OPP (L replaces M2)
   { S:{r:0,c:2}, OPP:{r:1,c:2}, O1:{r:0,c:0}, O2:{r:1,c:1}, M1:{r:0,c:1}, L:{r:1,c:0}  },
-  // Rot 6: Front: O1 M2 S   | Back: M1 O2 OPP (no libero swap)
+  // Rot 6: Front: O1 M2 S   | Back: M1 O2 OPP (M1 serving from back, no libero)
   { S:{r:0,c:2}, OPP:{r:1,c:2}, O1:{r:0,c:0}, O2:{r:1,c:1}, M1:{r:1,c:0}, M2:{r:0,c:1} },
 ];
 
@@ -224,8 +217,8 @@ const RECEIVE_BASE_SLOTS = [
   { S:{r:0,c:2}, OPP:{r:1,c:2}, O1:{r:1,c:1}, O2:{r:0,c:0}, M1:{r:0,c:1}, L:{r:1,c:0}  },
   // Rot 5: Front: O1 M1 S   | Back: L  O2 OPP (L replaces M2)
   { S:{r:0,c:2}, OPP:{r:1,c:2}, O1:{r:0,c:0}, O2:{r:1,c:1}, M1:{r:0,c:1}, L:{r:1,c:0}  },
-  // Rot 6: Front: O1 M2 S   | Back: L  O2 OPP (L replaces M1)
-  { S:{r:0,c:2}, OPP:{r:1,c:2}, O1:{r:0,c:0}, O2:{r:1,c:1}, L:{r:1,c:0},  M2:{r:0,c:1} },
+  // Rot 6: Front: O1 M2 S   | Back: M1 O2 OPP (M1 serving from back, no libero)
+  { S:{r:0,c:2}, OPP:{r:1,c:2}, O1:{r:0,c:0}, O2:{r:1,c:1}, M1:{r:1,c:0}, M2:{r:0,c:1} },
 ];
 
 // Convert a BASE {r,c} slot to normalised {x,y} for our team (bottom half)
@@ -328,9 +321,10 @@ function calcStats(rallies, roster) {
         if (t.quality===0) p.serveErr++;
       }
       // Block — libero cannot block
+      // Count all block attempts; stuff/error determined by rally endReason
       if (t.action==='block' && !p.isLibero) {
-        if (t.quality===3) { p.blocks++; teamBlocks++; }
-        if (t.quality===0) p.blockErr++;
+        p.blocks++;
+        teamBlocks++;
       }
       // Dig
       if (t.action==='dig' && t.quality > 0) p.digs++;
@@ -416,16 +410,28 @@ function inferNextAction(touchCount, servingUs) {
 // Server for each rotation (role that just crossed from front to back-right)
 const SERVERS = ['S', 'O1', 'M2', 'OPP', 'O2', 'M1'];
 
-// Back row roles per rotation (highlighted for mid-rally receives)
-// L replaces the back-row MB in rot 1,2,4,5
-const BACK_ROW = [
-  ['L',  'O2', 'S'],   // Rot 1 (L replaces M1)
-  ['L',  'O1', 'S'],   // Rot 2 (L replaces M1)
-  ['M2', 'O1', 'S'],   // Rot 3 (M2 stays, no libero)
-  ['L',  'O1', 'OPP'], // Rot 4 (L replaces M2)
-  ['L',  'O2', 'OPP'], // Rot 5 (L replaces M2)
-  ['M1', 'O2', 'OPP'], // Rot 6 (M1 stays, no libero)
+// Back row for SERVING team (libero not on court when MB is serving in Rot 3, 6)
+const BACK_ROW_SERVE = [
+  ['L',  'O2', 'S'],   // Rot 1
+  ['L',  'O1', 'S'],   // Rot 2
+  ['M2', 'O1', 'S'],   // Rot 3 (M2 serving, no libero)
+  ['L',  'O1', 'OPP'], // Rot 4
+  ['L',  'O2', 'OPP'], // Rot 5
+  ['M1', 'O2', 'OPP'], // Rot 6 (M1 serving, no libero)
 ];
+
+// Back row for RECEIVING team (libero always on court)
+const BACK_ROW_RECEIVE = [
+  ['L',  'O2', 'S'],   // Rot 1
+  ['L',  'O1', 'S'],   // Rot 2
+  ['L',  'O1', 'S'],   // Rot 3 (L replaces M2)
+  ['L',  'O1', 'OPP'], // Rot 4
+  ['L',  'O2', 'OPP'], // Rot 5
+  ['L',  'O2', 'OPP'], // Rot 6 (L replaces M1)
+];
+
+// Alias for backward compat — defaults to receive version
+const BACK_ROW = BACK_ROW_RECEIVE;
 
 // Front row attack highlights per rotation
 // Rot 1-3: full front row. Rot 4-6: replace S with OPP (S doesn't attack)
@@ -481,7 +487,7 @@ function isOurTouch(touchCount, servingUs) {
 
 // Returns array of player IDs to highlight given current touch and rotation
 // Only highlights OUR players — returns empty array when it's the opponent's turn
-function getHighlightIds(touchCount, servingUs, rotIdx, lineup, touches = [], oppServed = false) {
+function getHighlightIds(touchCount, servingUs, rotIdx, lineup, touches = [], oppServed = false, formation = 'base') {
   const byRole = {};
   lineup.forEach(p => { byRole[p.roleLabel] = p.id; });
 
@@ -489,9 +495,7 @@ function getHighlightIds(touchCount, servingUs, rotIdx, lineup, touches = [], op
   if (!servingUs && !oppServed) return [];
 
   // When they serve and server HAS been tapped but we haven't received yet
-  // (touchCount === 0 means no touches logged yet) → highlight our receivers
   if (!servingUs && oppServed && touchCount === 0) {
-    const backMB = [0,1,5].includes(rotIdx) ? 'M1' : 'M2';
     return ['O1', 'O2', 'L'].map(r => byRole[r]).filter(Boolean);
   }
 
@@ -501,23 +505,20 @@ function getHighlightIds(touchCount, servingUs, rotIdx, lineup, touches = [], op
   const action = inferNextAction(touchCount, servingUs);
   let roles = [];
 
-  // If last non-block touch was an opponent attack:
-  // - Front row → amber (blockers, handled by getBlockerIds)
-  // - Back row → green (receivers, shown here)
+  // If last non-block touch was an opponent attack — use actual back row on court
   if (action === 'receive' && lastTouchWasOppAttack(touches)) {
-    return BACK_ROW[rotIdx].map(r => byRole[r]).filter(Boolean);
+    const backRow = formation === 'base' ? BACK_ROW_SERVE : BACK_ROW_RECEIVE;
+    return backRow[rotIdx].map(r => byRole[r]).filter(Boolean);
   }
 
   if (action === 'spin' || action === 'float') {
-    // We serve — highlight our server
     roles = [SERVERS[rotIdx]];
   } else if (action === 'receive') {
-    // First receive when they serve → O1, O2, Libero
-    // Mid-rally receive → full back row
     if (!servingUs && touchCount === 0) {
       roles = ['O1', 'O2', 'L'];
     } else {
-      roles = BACK_ROW[rotIdx];
+      const backRow = formation === 'base' ? BACK_ROW_SERVE : BACK_ROW_RECEIVE;
+      roles = backRow[rotIdx];
     }
   } else if (action === 'set') {
     // If setter received the previous touch, libero sets instead
@@ -553,14 +554,24 @@ function getBlockerIds(touchCount, servingUs, rotIdx, lineup, touches) {
 // Same structure as our team — mirrored rotation logic
 
 // Opp back row per rotation (for mid-rally receives/digs)
-const OPP_BACK_ROW = [
-  ['L',  'O2', 'S'],   // Rot 1 (L replaces M1)
-  ['L',  'O1', 'S'],   // Rot 2 (L replaces M1)
-  ['M2', 'O1', 'S'],   // Rot 3 (no libero)
-  ['L',  'O1', 'OPP'], // Rot 4 (L replaces M2)
-  ['L',  'O2', 'OPP'], // Rot 5 (L replaces M2)
-  ['M1', 'O2', 'OPP'], // Rot 6 (no libero)
+// OPP back row — same split logic
+const OPP_BACK_ROW_SERVE = [
+  ['L',  'O2', 'S'],   // Rot 1
+  ['L',  'O1', 'S'],   // Rot 2
+  ['M2', 'O1', 'S'],   // Rot 3 (M2 serving, no libero)
+  ['L',  'O1', 'OPP'], // Rot 4
+  ['L',  'O2', 'OPP'], // Rot 5
+  ['M1', 'O2', 'OPP'], // Rot 6 (M1 serving, no libero)
 ];
+const OPP_BACK_ROW_RECEIVE = [
+  ['L',  'O2', 'S'],   // Rot 1
+  ['L',  'O1', 'S'],   // Rot 2
+  ['L',  'O1', 'S'],   // Rot 3
+  ['L',  'O1', 'OPP'], // Rot 4
+  ['L',  'O2', 'OPP'], // Rot 5
+  ['L',  'O2', 'OPP'], // Rot 6
+];
+const OPP_BACK_ROW = OPP_BACK_ROW_RECEIVE;
 
 // Opp front row attackers per rotation
 // Rot 1-3: full front row. Rot 4-6: OPP highlighted instead of S
@@ -595,7 +606,8 @@ function getOppHighlightIds(touchCount, servingUs, rotIdx, oppLineup, touches, o
     if (servingUs && touchCount === 1) {
       roles = ['O1', 'O2', 'L'];
     } else {
-      roles = OPP_BACK_ROW[rotIdx];
+      // Opp is receiving/digging → libero always on court
+      roles = OPP_BACK_ROW_RECEIVE[rotIdx];
     }
   } else if (action === 'set') {
     const lastOppTouch = [...touches].reverse().find(t => t.team === 'opp');
@@ -667,8 +679,8 @@ function SetupScreen({ squad, onSaveSquad, onStartMatch }) {
   const [localSquad, setLocalSquad] = useState(squad.length > 0 ? squad : []);
   const [assignments, setAssignments] = useState({ S:null,O1:null,O2:null,M1:null,M2:null,OPP:null,L:null });
   const [pickingRole, setPickingRole] = useState(null); // which role slot is being picked
-  const [ourName, setOurName] = useState('Loughborough A');
-  const [theirName, setTheirName] = useState('Nottingham A');
+  const [ourName, setOurName] = useState('');
+  const [theirName, setTheirName] = useState('');
   const [rotation, setRotation] = useState(0);
   const [servingUs, setServingUs] = useState(true);
 
@@ -1121,7 +1133,7 @@ export default function App() {
   // ── MATCH PAGE
   const [page, setPage] = useState('match');
   const [gameState, setGameState] = useState({
-    ourName:'Loughborough A', theirName:'Nottingham A',
+    ourName:'', theirName:'',
     ourScore:0, theirScore:0,
     ourSets:0, theirSets:0,
     currentSet:1,
@@ -1138,11 +1150,19 @@ export default function App() {
   useEffect(() => {
     async function loadData() {
       try {
-        const savedSquad = await AsyncStorage.getItem(STORAGE_SQUAD);
-        if (savedSquad) setSquad(JSON.parse(savedSquad));
-        const savedMatch = await AsyncStorage.getItem(STORAGE_MATCH);
-        if (savedMatch) {
-          // Has a last match — show home screen with continue option
+        // Version check — clear old saved data when app schema changes
+        const version = await AsyncStorage.getItem('@vb_version');
+        if (version !== '2') {
+          await AsyncStorage.removeItem(STORAGE_SQUAD);
+          await AsyncStorage.removeItem(STORAGE_MATCH);
+          await AsyncStorage.setItem('@vb_version', '2');
+        } else {
+          const savedSquad = await AsyncStorage.getItem(STORAGE_SQUAD);
+          if (savedSquad) setSquad(JSON.parse(savedSquad));
+          const savedMatch = await AsyncStorage.getItem(STORAGE_MATCH);
+          if (savedMatch) {
+            // Has a last match — show home screen with continue option
+          }
         }
       } catch(e) { console.log('Load error', e); }
       setSquadLoaded(true);
@@ -1159,6 +1179,69 @@ export default function App() {
   async function saveMatchState(state) {
     try { await AsyncStorage.setItem(STORAGE_MATCH, JSON.stringify(state)); }
     catch(e) { console.log('Save match error', e); }
+  }
+
+  function exportToExcel(ralliesData, statsData, rosterData, gsData) {
+    try {
+      // Build CSV strings for each sheet then combine into a downloadable file
+      // Sheet 1: Match Summary
+      const summaryRows = [
+        ['Match Summary'],
+        ['Our Team', gsData.ourName],
+        ['Opponent', gsData.theirName],
+        ['Sets Won', gsData.ourSets, gsData.theirSets],
+        [''],
+        ['Set', 'Our Score', 'Their Score', 'Winner'],
+        ...gsData.setHistory.map(s => [s.setNum, s.ourScore, s.theirScore, s.winner === 'our' ? gsData.ourName : gsData.theirName]),
+      ];
+
+      // Sheet 2: Player Stats
+      const statRows = [
+        ['Player Stats'],
+        ['#', 'Name', 'Role', 'Kills', 'Att', 'Att Err', 'Eff%', 'Aces', 'Serve Err', 'Blocks', 'Block Err', 'RCV', 'RCV%', 'Digs'],
+        ...rosterData.map(p => {
+          const ps = statsData.ps[p.id] || {};
+          const eff = ps.attackAtt > 0 ? Math.round(((ps.kills||0) - (ps.attackErr||0)) / ps.attackAtt * 100) : 0;
+          const recvPct = ps.recvTotal > 0 ? Math.round((ps.recvQual||0) / ps.recvTotal / 3 * 100) : 0;
+          return [p.num, p.name, p.role, ps.kills||0, ps.attackAtt||0, ps.attackErr||0, eff+'%',
+            ps.aces||0, ps.serveErr||0, ps.blocks||0, ps.blockErr||0, ps.recvTotal||0, recvPct+'%', ps.digs||0];
+        }),
+      ];
+
+      // Sheet 3: Rally Log
+      const rallyRows = [
+        ['Rally Log'],
+        ['Rally #', 'Outcome', 'End Reason', 'Touch #', 'Team', 'Player #', 'Player Name', 'Action', 'Quality'],
+        ...ralliesData.flatMap(r =>
+          r.touches.map((t, i) => [
+            r.rallyNum, r.outcome === 'our' ? gsData.ourName + ' point' : gsData.theirName + ' point',
+            r.endReason, i+1, t.team, t.playerNum, t.playerName,
+            t.action, t.quality !== null ? t.quality : '',
+          ])
+        ),
+      ];
+
+      // Convert to CSV
+      const NL = '\n';
+      const toCSV = rows => rows.map(r => r.map(c => '"' + String(c||'').replace(/"/g, '""') + '"').join(',')).join(NL);
+
+      const csv = ['=== MATCH SUMMARY ===', toCSV(summaryRows),
+        '', '=== PLAYER STATS ===', toCSV(statRows),
+        '', '=== RALLY LOG ===', toCSV(rallyRows)].join(NL);
+
+      // Trigger download via browser
+      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href  = url;
+      link.download = (gsData.ourName||'Match') + '_vs_' + (gsData.theirName||'Opponent') + '_' + new Date().toISOString().slice(0,10) + '.csv';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch(e) {
+      console.log('Export error', e);
+    }
   }
 
   // Rotation index 0-5; 0 = setter back-right (first serve)
@@ -1272,8 +1355,8 @@ export default function App() {
 
   // Our team highlight IDs (green = receivers/setter/attacker)
   const highlightIds = afterTouchBlock
-    ? BACK_ROW[ourRotation].map(r => ourLineup.find(p => p.roleLabel === r)?.id).filter(Boolean)
-    : getHighlightIds(rallyActive ? nonBlockCount : 0, servingUs, ourRotation, ourLineup, touches, oppServed);
+    ? BACK_ROW_RECEIVE[ourRotation].map(r => ourLineup.find(p => p.roleLabel === r)?.id).filter(Boolean)
+    : getHighlightIds(rallyActive ? nonBlockCount : 0, servingUs, ourRotation, ourLineup, touches, oppServed, ourFormation);
 
   // Our team blocker IDs (amber = front row should block)
   const blockerIds = afterTouchBlock
@@ -1282,7 +1365,7 @@ export default function App() {
 
   // Opponent highlight IDs — after touch block highlight their back row too
   const oppHighlightIds = afterTouchBlock
-    ? OPP_BACK_ROW[oppRotation].map(r => oppLineup.find(p => p.roleLabel === r)?.id).filter(Boolean)
+    ? OPP_BACK_ROW_RECEIVE[oppRotation].map(r => oppLineup.find(p => p.roleLabel === r)?.id).filter(Boolean)
     : getOppHighlightIds(rallyActive ? nonBlockCount : 0, servingUs, oppRotation, oppLineup, touches, oppServed);
 
   const stats = calcStats(rallies, ourRoster);
@@ -1314,11 +1397,11 @@ export default function App() {
 
     if (team === 'opp') {
       // Special case: when they serve and server hasn't been tapped yet,
-      // just mark oppServed=true to switch highlights — do NOT add to touches
-      // so touch indices for our team stay correct (touch 0 = our receive)
+      // mark serve as started — next tap determines outcome:
+      // player tap = in play, court tap = ace (our side) or fault (their side)
       if (!servingUs && !oppServed) {
         setOppServed(true);
-        setPendingFrom(null);
+        setPendingFrom(player); // set pendingFrom so court tap can draw arrow from server
         return;
       }
 
@@ -1382,6 +1465,24 @@ export default function App() {
     const oppJustAttacked = lastTouchWasOppAttack(t);
     const needsReceiveBlockChoice = action === 'receive' && isFrontRow && isOur && oppJustAttacked;
 
+    // Popup only for: serve (spin/float choice) and serve receive (quality)
+    const isServeReceive = action === 'receive' && !servingUs && countNonBlockTouches(t) === 0;
+    const isServe = action === 'spin' || action === 'float';
+    const needsQuality = isServeReceive;
+    const needsPopup = isServe || needsQuality || needsReceiveBlockChoice;
+
+    if (!needsPopup) {
+      // Log instantly — no popup
+      confirmPopup({
+        player, team, px, py,
+        touchIndex: touches.length,
+        action, quality: null,
+        isOur, servingUs,
+        needsReceiveBlockChoice: false,
+      });
+      return;
+    }
+
     setPopup({
       player, team, px, py,
       touchIndex: touches.length,
@@ -1420,29 +1521,14 @@ export default function App() {
     }
 
     // ── BLOCK OUTCOMES ──────────────────────────────────────────────────────
+    // After a block, outcome is determined by where the ball goes next:
+    // - Tap opponent floor/court (their side) → stuff block, our point
+    // - Tap our floor/court (our side) → block error, their point
+    // - Tap a player (either team) → ball still in play, continue rally
+    // Set pendingFrom so the court tap or next player tap handles it
     if (touch.action === 'block') {
-      if (touch.quality === 3) {
-        // Stuff block — our point, end rally immediately (no arrow needed)
-        setPendingFrom(null);
-        setRallyEndModal({
-          outcome: 'our',
-          reason: 'Stuff block — ball returned to opponent court',
-          endReason: 'block_stuff',
-        });
-      } else if (touch.quality === 0) {
-        // Block error — their point
-        setPendingFrom(null);
-        setRallyEndModal({
-          outcome: 'them',
-          reason: 'Block error — ball went out or into net',
-          endReason: 'block_error',
-        });
-      } else {
-        // Touch block (quality 1 or 2) — ball deflected back to opponent
-        // Next tap should be opponent player receiving the deflected ball
-        setPendingFrom(null);
-        setAfterTouchBlock(true);
-      }
+      setAfterTouchBlock(true);
+      setPendingFrom(p.player);
       return;
     }
 
@@ -1471,12 +1557,53 @@ export default function App() {
   // Tap on the court surface (not on a player)
   function onCourtTap(x, y, cw, ch) {
     if (!rallyActive || !pendingFrom) return;
-    // Draw arrow to exact tap point regardless of in/out
+
+    // Dead zone — if tap is within 60px of any player, ignore the court tap
+    const DEAD_ZONE = 60;
+    const allPlayers = [...ourLineup, ...oppLineup];
+    const nearPlayer = allPlayers.some(p => {
+      if (!p?.xy) return false;
+      const px = p.xy.x * cw;
+      const py = p.xy.y * ch;
+      const dist = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
+      return dist < DEAD_ZONE;
+    });
+    if (nearPlayer) return;
+
+    const NET = ch * 0.5;
+    const oppSide = y < NET;
+    const lastTouch = touches[touches.length - 1];
+
+    // Special case: opponent just served (oppServed=true, no touches logged yet)
+    // Court tap determines serve outcome
+    if (!servingUs && oppServed && touches.length === 0) {
+      setArrows(prev => [...prev, { fromId: pendingFrom.id, toType:'floor', toX:x, toY:y }]);
+      setPendingFrom(null);
+      if (oppSide) {
+        setRallyEndModal({ outcome: 'our', reason: 'Opponent serve fault', endReason: 'serve_fault' });
+      } else {
+        setRallyEndModal({ outcome: 'them', reason: 'Opponent serve ace', endReason: 'ace' });
+      }
+      return;
+    }
+
     setArrows(prev => [...prev, { fromId: pendingFrom.id, toType:'floor', toX:x, toY:y }]);
     setPendingFrom(null);
-    const lastTouchTeam = touches.length > 0 ? touches[touches.length-1].team : 'our';
+
+    const lastTouchTeam = lastTouch?.team || 'our';
     const result = determineOutcomeFromTap(x, y, cw, ch, lastTouchTeam);
-    setRallyEndModal({ ...result, endReason: 'floor' });
+
+    // Block outcome
+    if (lastTouch?.action === 'block') {
+      setAfterTouchBlock(false);
+      if (oppSide) {
+        setRallyEndModal({ outcome: 'our', reason: 'Stuff block — ball landed in opponent court', endReason: 'block_stuff' });
+      } else {
+        setRallyEndModal({ outcome: 'them', reason: 'Block error — ball landed on our side', endReason: 'block_error' });
+      }
+    } else {
+      setRallyEndModal({ ...result, endReason: 'floor' });
+    }
   }
 
   // Net button pressed
@@ -1486,14 +1613,11 @@ export default function App() {
   }
 
   function confirmNet(faultTeam) {
-    // faultTeam = 'our' | 'them' — whoever caused the net touch
     const outcome = faultTeam === 'our' ? 'them' : 'our';
+    const reason  = faultTeam === 'our' ? 'Our player touched the net' : 'Their player touched the net';
     setNetModal(false);
-    setRallyEndModal({
-      outcome,
-      reason: faultTeam === 'our' ? 'Our player touched the net' : 'Their player touched the net',
-      endReason: 'net',
-    });
+    setPendingFrom(null); // clear any pending arrow
+    endRally({ outcome, reason, endReason: 'net' });
   }
 
   // ── SET / MATCH LOGIC ──────────────────────────────────────────────────────
@@ -1509,15 +1633,14 @@ export default function App() {
     return null;
   }
 
-  function confirmRallyEnd() {
-    if (!rallyEndModal) return;
-    const weWon = rallyEndModal.outcome === 'our';
+  function endRally(modal) {
+    const weWon = modal.outcome === 'our';
 
     const newRally = {
       id: Date.now(), rallyNum: rallies.length+1,
       touches, arrows,
-      outcome:   rallyEndModal.outcome,
-      endReason: rallyEndModal.endReason || 'floor',
+      outcome:   modal.outcome,
+      endReason: modal.endReason || 'floor',
       scoreBefore: { us: gameState.ourScore, them: gameState.theirScore },
     };
     setRallies(prev => [...prev, newRally]);
@@ -1590,6 +1713,7 @@ export default function App() {
 
     setRallyActive(false);
     setTouches([]); setArrows([]); setPendingFrom(null);
+    touchesRef.current = [];
     setReceivedFirst(false);
     setOppReceivedFirst(false);
     setOppServed(false);
@@ -1597,27 +1721,51 @@ export default function App() {
     setRallyEndModal(null);
   }
 
-  function undoLastTouch() {
-    if (touches.length === 0) return;
-    const newTouches = touches.slice(0, -1);
-    const newArrows  = arrows.slice(0, -1);
-    setTouches(newTouches);
-    setArrows(newArrows);
-    setPopup(null);
+  function confirmRallyEnd() {
+    if (!rallyEndModal) return;
+    endRally(rallyEndModal);
+  }
 
-    // Restore pendingFrom to the player from the touch before the undone one
-    // so that when the next player is tapped, an arrow is drawn from the correct source
-    // If we undid touch 0 (first touch), there's no previous player so pendingFrom = null
-    if (newTouches.length > 0) {
-      const prevTouch = newTouches[newTouches.length - 1];
-      setPendingFrom({ id: prevTouch.playerId, ...prevTouch });
-    } else {
-      setPendingFrom(null);
+  function undoLastTouch() {
+    // If no touches logged but oppServed is true — undo the server tap
+    if (touches.length === 0) {
+      if (oppServed) {
+        setOppServed(false);
+        setPendingFrom(null);
+      }
+      return;
     }
 
-    // If we undid the first touch when receiving, revert formation back to receive
-    if (!servingUs && newTouches.length === 0) {
+    const undoneTouch = touches[touches.length - 1];
+    const newTouches  = touches.slice(0, -1);
+    // Remove last arrow only if it corresponds to the undone touch
+    const newArrows   = arrows.length > 0 ? arrows.slice(0, -1) : [];
+
+    setTouches(newTouches);
+    touchesRef.current = newTouches;
+    setArrows(newArrows);
+    setPopup(null);
+    setRallyEndModal(null);
+
+    // Restore pendingFrom — null if no previous touches, else previous player
+    if (newTouches.length > 0) {
+      const prevTouch = newTouches[newTouches.length - 1];
+      setPendingFrom({ id: prevTouch.playerId });
+    } else {
+      setPendingFrom(null);
+      // If undid first opp touch after our serve, reset oppReceivedFirst
+      if (servingUs) setOppReceivedFirst(false);
+    }
+
+    // Reset afterTouchBlock if the undone touch was a block
+    if (undoneTouch.action === 'block') setAfterTouchBlock(false);
+
+    // Revert receive formation if we undid the first receive touch
+    if (!servingUs && newTouches.filter(t => t.team === 'our').length === 0) {
       setReceivedFirst(false);
+    }
+    if (servingUs && newTouches.filter(t => t.team === 'opp').length === 0) {
+      setOppReceivedFirst(false);
     }
   }
 
@@ -1642,6 +1790,15 @@ export default function App() {
           setOurRoster(roster);
           setGameState(g => ({ ...g, ourName, theirName, ourScore:0, theirScore:0, ourSets:0, theirSets:0, currentSet:1, setHistory:[], matchOver:false }));
           setOurRotation(rotation);
+          // Receiving team is always 1 rotation behind the serving team
+          if (sv) {
+            // We serve → opponent is 1 behind us
+            setOppRotation((rotation - 1 + 6) % 6);
+          } else {
+            // They serve → we are 1 behind them (opp starts at rotation 0 by default)
+            setOppRotation(0);
+            setOurRotation((0 - 1 + 6) % 6);
+          }
           setServingUs(sv);
           setScreen('match');
           setPage('match');
@@ -1676,11 +1833,21 @@ export default function App() {
               rallyEndModal={rallyEndModal}
               confirmRallyEnd={confirmRallyEnd}
               setRallyEndModal={setRallyEndModal}
+              onBackRallyEnd={() => {
+                setArrows(prev => {
+                  const last = prev[prev.length - 1];
+                  return last?.toType === 'floor' ? prev.slice(0, -1) : prev;
+                });
+                const lastT = touches[touches.length - 1];
+                if (lastT) setPendingFrom({ id: lastT.playerId });
+                setRallyEndModal(null);
+              }}
             />
           )}
           {page==='stats'   && <StatsPanel   stats={stats} roster={ourRoster} rallies={rallies} />}
           {page==='history' && <HistoryPanel rallies={rallies} />}
-          {page==='setup'   && <SetupPanel   gameState={gameState} setGameState={setGameState} ourRotation={ourRotation} setOurRotation={setOurRotation} />}
+          {page==='setup'   && <SetupPanel   gameState={gameState} setGameState={setGameState} ourRotation={ourRotation} setOurRotation={setOurRotation}
+            onExport={() => exportToExcel(rallies, stats, ourRoster, gameState)} />}
         </View>
 
         {IS_TABLET && (
@@ -1754,9 +1921,16 @@ export default function App() {
                   key={i}
                   style={[s.rotBtn, {minWidth:60}]}
                   onPress={() => {
-                    setOurRotation(i);
-                    // Team that lost the set serves first in next set
-                    setServingUs(setResultModal?.winner === 'them');
+                    const nextServingUs = setResultModal?.winner === 'them';
+                    // Receiving team is 1 rotation behind serving team
+                    if (nextServingUs) {
+                      setOurRotation(i);
+                      setOppRotation((i - 1 + 6) % 6);
+                    } else {
+                      setOppRotation(i);
+                      setOurRotation((i - 1 + 6) % 6);
+                    }
+                    setServingUs(nextServingUs);
                     setSetResultModal(null);
                   }}
                 >
@@ -1802,9 +1976,14 @@ export default function App() {
               </View>
             ))}
             <TouchableOpacity
-              style={[s.bigBtn, {backgroundColor: C.accent, marginTop:16}]}
+              style={[s.bigBtn, {backgroundColor: C.green, marginTop:16}]}
+              onPress={() => exportToExcel(rallies, stats, ourRoster, gameState)}
+            >
+              <Text style={s.bigBtnText}>📥 Export to CSV</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[s.bigBtn, {backgroundColor: C.accent, marginTop:8}]}
               onPress={() => {
-                // Reset everything for a new match
                 setMatchSummary(null);
                 setGameState(prev => ({
                   ...prev,
@@ -2083,7 +2262,7 @@ function CourtView({
   popup, setPopup, confirmPopup,
   startRally, undoLastTouch, servingUs, setServingUs,
   receivedFirst, afterTouchBlock,
-  rallyEndModal, confirmRallyEnd, setRallyEndModal,
+  rallyEndModal, confirmRallyEnd, setRallyEndModal, onBackRallyEnd,
 }) {
   const [courtLayout, setCourtLayout] = useState({x:0, y:0, width:0, height:0});
   const courtRef = useRef(null);
@@ -2157,7 +2336,6 @@ function CourtView({
               <Text style={[s.serveOptText, !servingUs && {color:C.oppTeam}]}>They Serve</Text>
             </TouchableOpacity>
           </View>
-        </View>
       )}
 
       {/* LIVE RALLY BAR */}
@@ -2216,7 +2394,7 @@ function CourtView({
         {/* NET — thicker, only as wide as court (8%–92%) */}
         <TouchableOpacity
           style={s.netTouchArea}
-          onPress={(e) => { e.stopPropagation(); if (rallyActive && pendingFrom) onNetPress(); }}
+          onPress={(e) => { e.stopPropagation(); if (rallyActive) onNetPress(); }}
           activeOpacity={0.7}
         >
           <View style={s.netBar}>
@@ -2238,6 +2416,7 @@ function CourtView({
           return (
             <TouchableOpacity
               key={player.id}
+              hitSlop={{top:16, bottom:16, left:16, right:16}}
               style={[s.playerCircle, isOppLib ? s.oppLiberoCircle : s.oppCircle, {
                 left:pos.x-33, top:pos.y-33,
                 opacity: isOppDimmed ? 0.35 : isLast ? 1 : 0.85,
@@ -2270,6 +2449,7 @@ function CourtView({
           return (
             <TouchableOpacity
               key={player.id}
+              hitSlop={{top:16, bottom:16, left:16, right:16}}
               style={[s.playerCircle,
                 player.libero ? s.liberoCircle : s.ourCircle,
               {
@@ -2336,7 +2516,9 @@ function CourtView({
             <View style={s.modalBtnRow}>
               <TouchableOpacity
                 style={[s.modalBtn, {borderColor:C.muted}]}
-                onPress={() => setRallyEndModal(null)}
+                onPress={() => {
+                  onBackRallyEnd();
+                }}
               >
                 <Text style={[s.modalBtnText, {color:C.dim}]}>← Back</Text>
               </TouchableOpacity>
@@ -2370,9 +2552,18 @@ function OurPopup({ popup, setPopup, confirmPopup }) {
   const actionColor          = actionMeta.color || C.accent;
 
   function selectAction(a) {
-    // Picking receive vs block — close the choice, keep quality step
-    setPopup(p => ({ ...p, action: a, needsReceiveBlockChoice: false }));
+    const updated = { ...popup, action: a, needsReceiveBlockChoice: false };
+    // Serve (spin/float) and block confirm instantly — no quality needed
+    if (a === 'spin' || a === 'float' || a === 'block') {
+      confirmPopup({ ...updated, quality: null });
+    } else {
+      setPopup(updated);
+    }
   }
+
+  // Quality only for serve receive (first touch when opp serves)
+  const isServeReceive = popup.action === 'receive' && !popup.servingUs && popup.touchIndex === 0;
+  const needsQuality = isServeReceive;
 
   function selectQuality(q) {
     confirmPopup({ ...popup, quality: q });
@@ -2438,19 +2629,25 @@ function OurPopup({ popup, setPopup, confirmPopup }) {
             </View>
           )}
 
-          {/* All other touches: auto action label */}
+          {/* All other touches: auto action label — tap it to confirm immediately */}
           {!isServe && !isReceiveBlockChoice && (
-            <View style={[s.popupActionBigBtn, {
-              backgroundColor: actionColor+'22',
-              borderColor: actionColor,
-              marginBottom: 16,
-            }]}>
-              <Text style={[s.popupActionBigText, {color: actionColor}]}>{actionMeta.label}</Text>
-            </View>
+            <TouchableOpacity
+              style={[s.popupActionBigBtn, {
+                backgroundColor: actionColor+'22',
+                borderColor: actionColor,
+                marginBottom: 16,
+              }]}
+              onPress={() => !needsQuality && confirmPopup({ ...popup, quality: null })}
+              activeOpacity={needsQuality ? 1 : 0.6}
+            >
+              <Text style={[s.popupActionBigText, {color: actionColor}]}>
+                {actionMeta.label}{!needsQuality ? '  →  Tap to log' : ''}
+              </Text>
+            </TouchableOpacity>
           )}
 
-          {/* Quality — one tap confirms (hidden while choosing receive/block) */}
-          {!isReceiveBlockChoice && (
+          {/* Quality — only for serve and receive */}
+          {!isReceiveBlockChoice && needsQuality && (
             <>
               <Text style={s.popupSectionLabel}>Quality</Text>
               <View style={s.popupQualRow}>
@@ -2580,10 +2777,8 @@ function SideStats({ gameState, stats, roster, touches, rallies, rallyActive, un
                 {touches.map((t,i) => (
                   <View key={i} style={s.logEntry}>
                     <Text style={[s.logNum,{color:t.team==='our'?C.accent:C.oppTeam}]}>#{t.playerNum}</Text>
-                    <Text style={s.logAction}>{ACTIONS[t.action]?.label||t.action}</Text>
-                    <Text style={[s.logQual,{color:t.quality===3?C.green:t.quality===0?C.red:C.dim}]}>
-                      {QUALITY_LABELS[t.quality]}
-                    </Text>
+                    <Text style={[s.logAction,{flex:1}]}>{t.playerName}</Text>
+                    <Text style={[s.logQual,{color:C.dim}]}>{ACTIONS[t.action]?.label||t.action}</Text>
                   </View>
                 ))}
                 <TouchableOpacity style={[s.undoBtn,{marginTop:4}]} onPress={undoLastTouch}>
@@ -2601,7 +2796,7 @@ function SideStats({ gameState, stats, roster, touches, rallies, rallyActive, un
                 </View>
                 {r.touches.map((t,i) => (
                   <Text key={i} style={{color:C.dim,fontSize:10}}>
-                    #{t.playerNum} {ACTIONS[t.action]?.label} ({QUALITY_LABELS[t.quality]||'?'})
+                    #{t.playerNum} {t.playerName} — {ACTIONS[t.action]?.label}
                   </Text>
                 ))}
               </View>
@@ -2806,10 +3001,16 @@ function HistoryPanel({ rallies }) {
             </Text>
           </View>
           {r.touches.map((t,i) => (
-            <View key={i} style={{flexDirection:'row',gap:8,marginBottom:2}}>
-              <Text style={{color:t.team==='our'?C.accent:C.oppTeam,fontSize:12,fontWeight:'600'}}>#{t.playerNum}</Text>
-              <Text style={{color:C.text,fontSize:12}}>{ACTIONS[t.action]?.label}</Text>
-              <Text style={{color:C.dim,fontSize:11}}>{QUALITY_LABELS[t.quality]??'?'}</Text>
+            <View key={i} style={{flexDirection:'row',gap:8,marginBottom:2,alignItems:'center'}}>
+              <Text style={{color:t.team==='our'?C.accent:C.oppTeam,fontSize:12,fontWeight:'700',fontFamily:'Barlow_700Bold',minWidth:30}}>
+                #{t.playerNum}
+              </Text>
+              <Text style={{color:t.team==='our'?C.text:C.oppTeam,fontSize:12,fontFamily:'Barlow_400Regular',flex:1}}>
+                {t.playerName}
+              </Text>
+              <Text style={{color:C.dim,fontSize:11,fontFamily:'Barlow_500Medium'}}>
+                {ACTIONS[t.action]?.label}
+              </Text>
             </View>
           ))}
           {r.endReason==='net' && <Text style={{color:C.amber,fontSize:10,marginTop:4}}>⚡ Net fault</Text>}
@@ -2822,9 +3023,15 @@ function HistoryPanel({ rallies }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SETUP PANEL
 // ─────────────────────────────────────────────────────────────────────────────
-function SetupPanel({ gameState, setGameState, ourRotation, setOurRotation }) {
+function SetupPanel({ gameState, setGameState, ourRotation, setOurRotation, onExport }) {
   return (
     <ScrollView contentContainerStyle={{padding:14,gap:12}}>
+      <TouchableOpacity
+        style={[s.bigBtn, {backgroundColor:C.green}]}
+        onPress={onExport}
+      >
+        <Text style={s.bigBtnText}>📥 Export Match to CSV</Text>
+      </TouchableOpacity>
       <View style={s.card}>
         <Text style={s.setupTitle}>Team Names</Text>
         <View style={{flexDirection:'row',gap:8}}>
