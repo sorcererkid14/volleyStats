@@ -807,10 +807,12 @@ function HomeScreen({ onNewMatch, onContinue, hasLastMatch, matchHistory = [] })
   return (
     <SafeAreaView style={s.safe}>
       <StatusBar barStyle="light-content" backgroundColor={C.bg} />
-      <ScrollView contentContainerStyle={{flexGrow:1, padding:24}}>
+      <ScrollView contentContainerStyle={{flexGrow:1, padding:24,
+        justifyContent: matchHistory.length === 0 ? 'center' : 'flex-start',
+        minHeight:'100%'}}>
 
         {/* Header */}
-        <View style={{alignItems:'center', paddingTop:32, paddingBottom:24}}>
+        <View style={{alignItems:'center', paddingTop: matchHistory.length === 0 ? 0 : 32, paddingBottom:24}}>
           <Text style={{fontSize:fs(42), fontWeight:'700', color:C.accent,
             fontFamily:'Barlow_700Bold', letterSpacing:3, lineHeight:46}}>
             VOLLEY
