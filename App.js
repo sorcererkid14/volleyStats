@@ -134,55 +134,49 @@ const DEFAULT_OPP_ROSTER = [
 // Libero swap: Rot 1,2,4,5 = L replaces M1/M2; Rot 3,6 = no swap
 
 const OPP_BASE_SLOTS = [
-  // Mirrored from our BASE_SLOTS (x flipped: our 1/6→5/6, our 5/6→1/6)
-  // Rot 1: Front: O1(5/6) M2(3/6) OPP(1/6) | Back: L(5/6) O2(3/6) S(1/6)
-  { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
-  // Rot 2: Front: O2(5/6) M2(3/6) OPP(1/6) | Back: L(5/6) O1(3/6) S(1/6)
-  { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
-  // Rot 3: Front: O2(5/6) M1(3/6) OPP(1/6) | Back: M2(5/6) O1(3/6) S(1/6) — no libero
-  { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, M2:{x:5/6,y:0.125} },
-  // Rot 4: Front: S(1/6) M1(3/6) O2(5/6) | Back: OPP(1/6) O1(3/6) L(5/6)
-  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
-  // Rot 5: Front: S(1/6) M1(3/6) O1(5/6) | Back: OPP(1/6) O2(3/6) L(5/6)
-  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
-  // Rot 6: Front: S(1/6) M2(3/6) O1(5/6) | Back: OPP(1/6) O2(3/6) M1(5/6) — no libero
-  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
+  // ROT1: S serves (their back-right=x:1/6,y:0.125). S/OPP diagonal. L replaces M2.
+  { S:{x:1/6,y:0.125}, O1:{x:1/6,y:0.375}, M1:{x:3/6,y:0.375}, OPP:{x:5/6,y:0.375}, O2:{x:5/6,y:0.125}, L:{x:3/6,y:0.125} },
+  // ROT2: O1 serves. S@back-mid. L replaces M2.
+  { O1:{x:1/6,y:0.125}, M1:{x:1/6,y:0.375}, OPP:{x:3/6,y:0.375}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, S:{x:3/6,y:0.125} },
+  // ROT3: M1 serves. S@back-left. No libero (MB serving).
+  { M1:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O2:{x:3/6,y:0.375}, M2:{x:5/6,y:0.375}, S:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125} },
+  // ROT4: OPP serves. S@front-left(their pov). L replaces M1.
+  { OPP:{x:1/6,y:0.125}, O2:{x:1/6,y:0.375}, M2:{x:3/6,y:0.375}, S:{x:5/6,y:0.375}, O1:{x:5/6,y:0.125}, L:{x:3/6,y:0.125} },
+  // ROT5: O2 serves. S@front-mid. L replaces M1.
+  { O2:{x:1/6,y:0.125}, M2:{x:1/6,y:0.375}, S:{x:3/6,y:0.375}, O1:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, OPP:{x:3/6,y:0.125} },
+  // ROT6: M2 serves. S@front-right(their pov). No libero (MB serving).
+  { M2:{x:1/6,y:0.125}, S:{x:1/6,y:0.375}, O1:{x:3/6,y:0.375}, M1:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125} },
 ];
 
-// Opp serve receive — mirrored from our RECEIVE_SLOTS
-// y coords mirrored: our y=0.60 → opp y=1-0.60=0.40, etc.
-// x coords mirrored: our x → 1-x
+// Opp serve receive — W formation in opponent half (y=0 to 0.5)
+// Their server at x:1/6 (their back-right = pos1 from their perspective)
+// x mirrored from our RECEIVE_SLOTS
 const OPP_RECEIVE_SLOTS = [
-  // Rot 1: mirrored
-  { OPP:{x:5/6,y:0.40}, M2:{x:3/6,y:0.40}, O2:{x:5/6,y:0.20}, L:{x:3/6,y:0.20},  O1:{x:1/6,y:0.25}, S:{x:1/6,y:0.08} },
-  // Rot 2: mirrored
-  { OPP:{x:3/6,y:0.42}, S:{x:3/6,y:0.32}, M2:{x:1/6,y:0.38}, O2:{x:5/6,y:0.18}, L:{x:3/6,y:0.18},  O1:{x:1/6,y:0.18} },
-  // Rot 3: mirrored
-  { M1:{x:5/6,y:0.42}, S:{x:5/6,y:0.32}, OPP:{x:1/6,y:0.40}, O2:{x:5/6,y:0.18}, O1:{x:3/6,y:0.18}, L:{x:1/6,y:0.18}  },
-  // Rot 4: mirrored
-  { S:{x:5/6,y:0.42}, M1:{x:4/6,y:0.32}, O2:{x:5/6,y:0.18}, O1:{x:3.5/6,y:0.18}, L:{x:2.2/6,y:0.18},  OPP:{x:0.8/6,y:0.09} },
-  // Rot 5: mirrored
-  { S:{x:3/6,y:0.40}, M1:{x:1/6,y:0.40}, O1:{x:5/6,y:0.18}, L:{x:3/6,y:0.18},  OPP:{x:1.8/6,y:0.09}, O2:{x:1/6,y:0.18} },
-  // Rot 6: mirrored
-  { M2:{x:5/6,y:0.40}, S:{x:1/6,y:0.40}, OPP:{x:5.5/6,y:0.08}, O1:{x:4.2/6,y:0.18}, O2:{x:3/6,y:0.18}, L:{x:1/6,y:0.18}  },
+  // ROT1: S@x:1/6 serves. W receive spread. L replaces M2.
+  { S:{x:1/6,y:0.08}, O1:{x:1/6,y:0.28}, M1:{x:3/6,y:0.38}, OPP:{x:5/6,y:0.28}, O2:{x:5/6,y:0.15}, L:{x:3/6,y:0.18} },
+  // ROT2: O1 serves. S@back-mid. L replaces M2.
+  { O1:{x:1/6,y:0.08}, M1:{x:1/6,y:0.35}, OPP:{x:3/6,y:0.40}, O2:{x:5/6,y:0.28}, L:{x:5/6,y:0.15}, S:{x:3/6,y:0.15} },
+  // ROT3: M1 serves. S@back-left. L replaces M1.
+  { M1:{x:1/6,y:0.08}, OPP:{x:1/6,y:0.35}, O2:{x:3/6,y:0.40}, L:{x:5/6,y:0.28}, S:{x:5/6,y:0.12}, O1:{x:3/6,y:0.18} },
+  // ROT4: OPP serves. S@front. L replaces M1.
+  { OPP:{x:1/6,y:0.08}, O2:{x:1/6,y:0.32}, M2:{x:3/6,y:0.40}, S:{x:5/6,y:0.35}, O1:{x:5/6,y:0.18}, L:{x:3/6,y:0.18} },
+  // ROT5: O2 serves. S@front-mid. L replaces M1.
+  { O2:{x:1/6,y:0.08}, M2:{x:1/6,y:0.35}, S:{x:3/6,y:0.40}, O1:{x:5/6,y:0.28}, L:{x:5/6,y:0.15}, OPP:{x:3/6,y:0.12} },
+  // ROT6: M2 serves. S@front. L replaces M2.
+  { M2:{x:1/6,y:0.08}, S:{x:1/6,y:0.35}, O1:{x:3/6,y:0.40}, M1:{x:5/6,y:0.35}, OPP:{x:5/6,y:0.15}, O2:{x:3/6,y:0.18} },
 ];
 
 // Opp after-receive base — direct xy coords (top half, x mirrored)
 // front row y=0.375, back row y=0.125
 // x: left=1/6, mid=3/6, right=5/6 BUT mirrored so col0=right=5/6
 const OPP_RECEIVE_BASE_SLOTS = [
-  // Rot 1: OPP left from their pov = RIGHT from our view (x=5/6)
-  { OPP:{x:5/6,y:0.375}, M2:{x:3/6,y:0.375}, O1:{x:1/6,y:0.375}, L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
-  // Rot 2: OPP right from their pov = LEFT from our view (x=1/6)
-  { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
-  // Rot 3: OPP right from their pov = LEFT from our view (x=1/6)
-  { S:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
-  // Rot 4: OPP right from their pov = LEFT from our view (x=1/6)
-  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:3/6,y:0.125}, O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
-  // Rot 5: OPP right from their pov = LEFT from our view (x=1/6)
-  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, M1:{x:3/6,y:0.375}, L:{x:5/6,y:0.125} },
-  // Rot 6: OPP right from their pov = LEFT from our view (x=1/6)
-  { S:{x:1/6,y:0.375}, OPP:{x:1/6,y:0.125}, O1:{x:5/6,y:0.375}, O2:{x:3/6,y:0.125}, L:{x:5/6,y:0.125}, M2:{x:3/6,y:0.375} },
+  // Must match OPP_BASE_SLOTS exactly
+  { S:{x:1/6,y:0.125}, O1:{x:1/6,y:0.375}, M1:{x:3/6,y:0.375}, OPP:{x:5/6,y:0.375}, O2:{x:5/6,y:0.125}, L:{x:3/6,y:0.125} },
+  { O1:{x:1/6,y:0.125}, M1:{x:1/6,y:0.375}, OPP:{x:3/6,y:0.375}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, S:{x:3/6,y:0.125} },
+  { M1:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O2:{x:3/6,y:0.375}, M2:{x:5/6,y:0.375}, S:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125} },
+  { OPP:{x:1/6,y:0.125}, O2:{x:1/6,y:0.375}, M2:{x:3/6,y:0.375}, S:{x:5/6,y:0.375}, O1:{x:5/6,y:0.125}, L:{x:3/6,y:0.125} },
+  { O2:{x:1/6,y:0.125}, M2:{x:1/6,y:0.375}, S:{x:3/6,y:0.375}, O1:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, OPP:{x:3/6,y:0.125} },
+  { M2:{x:1/6,y:0.125}, S:{x:1/6,y:0.375}, O1:{x:3/6,y:0.375}, M1:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125} },
 ];
 
 // ── BASE SLOTS (OUR TEAM) ─────────────────────────────────────────────────────
@@ -737,32 +731,32 @@ function getOppBlockerIds(touchCount, servingUs, rotIdx, oppLineup, touches) {
 // Opp back row per rotation (for mid-rally receives/digs)
 // OPP back row — same split logic
 const OPP_BACK_ROW_SERVE = [
-  ['L',  'O2', 'S'],   // Rot 1
-  ['L',  'O1', 'S'],   // Rot 2
-  ['M2', 'O1', 'S'],   // Rot 3 (M2 serving, no libero)
-  ['L',  'O1', 'OPP'], // Rot 4
-  ['L',  'O2', 'OPP'], // Rot 5
-  ['M1', 'O2', 'OPP'], // Rot 6 (M1 serving, no libero)
+  ['S',  'O2', 'L'],   // ROT1: S serves, back = S O2 L(M2)
+  ['O1', 'L',  'S'],   // ROT2: O1 serves, back = O1 L(M2) S
+  ['M1', 'S',  'O1'],  // ROT3: M1 serves (no L), back = M1 S O1
+  ['OPP','O1', 'L'],   // ROT4: OPP serves, back = OPP O1 L(M1)
+  ['O2', 'L',  'OPP'], // ROT5: O2 serves, back = O2 L(M1) OPP
+  ['M2', 'OPP','O2'],  // ROT6: M2 serves (no L), back = M2 OPP O2
 ];
 const OPP_BACK_ROW_RECEIVE = [
-  ['L',  'O2', 'S'],   // Rot 1
-  ['L',  'O1', 'S'],   // Rot 2
-  ['L',  'O1', 'S'],   // Rot 3
-  ['L',  'O1', 'OPP'], // Rot 4
-  ['L',  'O2', 'OPP'], // Rot 5
-  ['L',  'O2', 'OPP'], // Rot 6
+  ['S',  'O2', 'L'],   // ROT1: L replaces M2
+  ['O1', 'L',  'S'],   // ROT2: L replaces M2
+  ['L',  'S',  'O1'],  // ROT3: L replaces M1(was serving)
+  ['OPP','O1', 'L'],   // ROT4: L replaces M1
+  ['O2', 'L',  'OPP'], // ROT5: L replaces M1
+  ['L',  'OPP','O2'],  // ROT6: L replaces M2(was serving)
 ];
 const OPP_BACK_ROW = OPP_BACK_ROW_RECEIVE;
 
 // Opp front row attackers per rotation
 // Rot 1-3: full front row. Rot 4-6: OPP highlighted instead of S
 const OPP_ATTACKERS = [
-  ['O1', 'M2', 'OPP'], // Rot 1
-  ['O2', 'M2', 'OPP'], // Rot 2
-  ['O2', 'M1', 'OPP'], // Rot 3
-  ['O2', 'M1', 'OPP'], // Rot 4
-  ['O1', 'M1', 'OPP'], // Rot 5
-  ['O1', 'M2', 'OPP'], // Rot 6
+  ['O1', 'M1', 'OPP'], // ROT1
+  ['M1', 'OPP', 'O2'], // ROT2
+  ['OPP','O2', 'M2'],  // ROT3
+  ['O2', 'M2', 'S'],   // ROT4
+  ['M2', 'S',  'O1'],  // ROT5
+  ['S',  'O1', 'M1'],  // ROT6
 ];
 
 // Returns array of opponent player IDs to highlight
