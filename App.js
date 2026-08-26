@@ -28,18 +28,19 @@ const fs = (size) => size;
 
 // ── COLOURS ───────────────────────────────────────────────────────────────────
 const DARK = {
-  bg:      '#0D0D12', surface: '#16181F', card: '#1C1F2A',
-  border:  '#252836', muted: '#3A3F55',  dim: '#7A84A0',
-  text:    '#E8ECF4', accent: '#B57BEE', accentD: '#6B3FA0',
-  green:   '#2EC27E', red: '#E05252',    amber: '#E8A838',
-  ourTeam: '#B57BEE', oppTeam: '#E8727A', net: '#B57BEE',
+  // Warmer, slightly blue-tinted dark — less generic than pure near-black
+  bg:      '#0A0C14', surface: '#12141E', card: '#181B28',
+  border:  '#222540', muted: '#373D58',  dim: '#6B7494',
+  text:    '#EDF0FA', accent: '#A855F7', accentD: '#7C3AED',
+  green:   '#22C55E', red: '#EF4444',    amber: '#F59E0B',
+  ourTeam: '#A855F7', oppTeam: '#F43F5E', net: '#A855F7',
 };
 const LIGHT = {
-  bg:      '#F0F2F8', surface: '#FFFFFF', card: '#E8EBF5',
-  border:  '#D0D4E8', muted: '#9099BB',  dim: '#5A6080',
-  text:    '#1A1D2E', accent: '#7B3FBF', accentD: '#5A2E8A',
-  green:   '#1A9E5C', red: '#CC3333',    amber: '#C07800',
-  ourTeam: '#7B3FBF', oppTeam: '#CC3344', net: '#7B3FBF',
+  bg:      '#F8F9FF', surface: '#FFFFFF', card: '#F0F2FF',
+  border:  '#DDE0F5', muted: '#8B92B8',  dim: '#4A5280',
+  text:    '#0F1128', accent: '#7C3AED', accentD: '#5B21B6',
+  green:   '#16A34A', red: '#DC2626',    amber: '#D97706',
+  ourTeam: '#7C3AED', oppTeam: '#E11D48', net: '#7C3AED',
 };
 // C is set dynamically based on theme — default dark
 let C = DARK;
@@ -581,7 +582,8 @@ function inferNextAction(touchCount, servingUs) {
 
 // ── HIGHLIGHT RULES ──────────────────────────────────────────────────────────
 // Server for each rotation (role that just crossed from front to back-right)
-const SERVERS = ['S', 'O1', 'M2', 'OPP', 'O2', 'M1'];
+const SERVERS = ['S', 'S', 'S', 'OPP', 'OPP', 'OPP'];
+// ROT1-3: Setter serves from back-right; ROT4-6: OPP serves from back-right
 
 // Back row for SERVING team (libero not on court when MB is serving in Rot 3, 6)
 const BACK_ROW_SERVE = [
@@ -609,12 +611,12 @@ const BACK_ROW = BACK_ROW_RECEIVE;
 // Front row attack highlights per rotation
 // Rot 1-3: full front row. Rot 4-6: replace S with OPP (S doesn't attack)
 const ATTACKERS = [
-  ['O1', 'M2', 'OPP'], // Rot 1
-  ['O2', 'M2', 'OPP'], // Rot 2
-  ['O2', 'M1', 'OPP'], // Rot 3
-  ['O2', 'M1', 'OPP'], // Rot 4
-  ['O1', 'M1', 'OPP'], // Rot 5
-  ['O1', 'M2', 'OPP'], // Rot 6
+  ['O1', 'M2', 'OPP'], // Rot 1: front = O1 M2 OPP
+  ['O2', 'M2', 'OPP'], // Rot 2: front = O2 M2 OPP
+  ['O2', 'M1', 'OPP'], // Rot 3: front = O2 M1 OPP
+  ['O2', 'M1', 'S'],   // Rot 4: front = O2 M1 S
+  ['O1', 'M1', 'S'],   // Rot 5: front = O1 M1 S
+  ['O1', 'M2', 'S'],   // Rot 6: front = O1 M2 S
 ];
 
 // Front row blockers per rotation — who should jump when opponent attacks
@@ -813,17 +815,18 @@ function HomeScreen({ onNewMatch, onContinue, hasLastMatch, matchHistory = [] })
 
         {/* Header */}
         <View style={{alignItems:'center', paddingTop: matchHistory.length === 0 ? 0 : 32, paddingBottom:24}}>
-          <Text style={{fontSize:fs(42), fontWeight:'700', color:C.accent,
-            fontFamily:'Barlow_700Bold', letterSpacing:3, lineHeight:46}}>
+          <Text style={{fontSize:fs(48), fontWeight:'700', color:C.accent,
+            fontFamily:'Barlow_700Bold', letterSpacing:4, lineHeight:52}}>
             VOLLEY
           </Text>
-          <Text style={{fontSize:fs(42), fontWeight:'700', color:C.text,
-            fontFamily:'Barlow_700Bold', letterSpacing:3, marginTop:-6}}>
+          <Text style={{fontSize:fs(48), fontWeight:'700', color:C.text,
+            fontFamily:'Barlow_700Bold', letterSpacing:4, marginTop:-8}}>
             STATS
           </Text>
-          <Text style={{fontSize:fs(12), color:C.dim, fontFamily:'Barlow_400Regular',
-            marginTop:8, letterSpacing:1}}>
-            Performance tracking for volleyball
+          <View style={{width:48, height:3, backgroundColor:C.accent, borderRadius:2, marginTop:14, marginBottom:2}} />
+          <Text style={{fontSize:fs(11), color:C.muted, fontFamily:'Barlow_500Medium',
+            marginTop:8, letterSpacing:2, textTransform:'uppercase'}}>
+            Volleyball Analytics
           </Text>
         </View>
 
@@ -982,6 +985,8 @@ function SetupScreen({ squad, onSaveSquad, onStartMatch }) {
   // Opponent jersey numbers (7 players: S, O1, O2, M1, M2, OPP, L)
   const OPP_ROLES_ORDER = ['S','O1','O2','M1','M2','OPP','L'];
   const [oppNums, setOppNums] = useState({S:'',O1:'',O2:'',M1:'',M2:'',OPP:'',L:''});
+  const [oppNumsExpanded, setOppNumsExpanded] = useState(false);
+  const [rotationExpanded, setRotationExpanded] = useState(false);
 
   // Squad editor state
   const [editPlayer, setEditPlayer] = useState(null); // {id, num, name, pos} or null for new
@@ -1260,46 +1265,74 @@ function SetupScreen({ squad, onSaveSquad, onStartMatch }) {
           </View>
 
           <View style={s.card}>
-            <Text style={s.setupTitle}>Opponent Jersey Numbers</Text>
-            <Text style={{color:C.dim, fontSize:12, fontFamily:'Barlow_400Regular', marginBottom:10}}>
-              Optional — enter numbers for each position
-            </Text>
-            <View style={{flexDirection:'row', flexWrap:'wrap', gap:8}}>
-              {OPP_ROLES_ORDER.map(role => (
-                <View key={role} style={{alignItems:'center', gap:4}}>
-                  <Text style={{fontSize:10, color:C.muted, fontFamily:'Barlow_500Medium'}}>{role}</Text>
-                  <TextInput
-                    style={[s.input, {width:56, textAlign:'center', fontFamily:'Barlow_700Bold', fontSize:16}]}
-                    value={oppNums[role]}
-                    onChangeText={v => setOppNums(p => ({...p, [role]: v.replace(/[^0-9]/g,'')}))}
-                    placeholder="—"
-                    placeholderTextColor={C.muted}
-                    keyboardType="numeric"
-                    maxLength={3}
-                  />
-                </View>
-              ))}
-            </View>
+            <TouchableOpacity
+              style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}
+              onPress={() => setOppNumsExpanded(e => !e)}
+            >
+              <View>
+                <Text style={s.setupTitle}>Opponent Jersey Numbers</Text>
+                <Text style={{color:C.dim, fontSize:12, fontFamily:'Barlow_400Regular', marginTop:2}}>
+                  {Object.values(oppNums).some(v => v)
+                    ? Object.entries(oppNums).filter(([,v]) => v).map(([r,v]) => `${r}:#${v}`).join('  ')
+                    : 'Optional — tap to add'}
+                </Text>
+              </View>
+              <Text style={{color:C.accent, fontSize:20, fontFamily:'Barlow_700Bold'}}>
+                {oppNumsExpanded ? '▲' : '▼'}
+              </Text>
+            </TouchableOpacity>
+
+            {oppNumsExpanded && (
+              <View style={{flexDirection:'row', flexWrap:'wrap', gap:8, marginTop:12}}>
+                {OPP_ROLES_ORDER.map(role => (
+                  <View key={role} style={{alignItems:'center', gap:4}}>
+                    <Text style={{fontSize:10, color:C.muted, fontFamily:'Barlow_500Medium'}}>{role}</Text>
+                    <TextInput
+                      style={[s.input, {width:56, textAlign:'center', fontFamily:'Barlow_700Bold', fontSize:16}]}
+                      value={oppNums[role]}
+                      onChangeText={v => setOppNums(p => ({...p, [role]: v.replace(/[^0-9]/g,'')}))}
+                      placeholder="—"
+                      placeholderTextColor={C.muted}
+                      keyboardType="numeric"
+                      maxLength={3}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
 
           <View style={s.card}>
-            <Text style={s.setupTitle}>Starting Rotation</Text>
-            <Text style={{color:C.dim, fontSize:12, fontFamily:'Barlow_400Regular', marginBottom:10}}>
-              Which rotation does your team start in?
-            </Text>
-            <View style={{flexDirection:'row', flexWrap:'wrap', gap:8}}>
-              {[0,1,2,3,4,5].map(i => (
-                <TouchableOpacity
-                  key={i}
-                  style={[s.rotBtn, rotation===i && s.rotBtnSel, {minWidth:60}]}
-                  onPress={() => setRotation(i)}
-                >
-                  <Text style={[s.rotBtnText, rotation===i && {color:C.accent, fontFamily:'Barlow_600SemiBold'}]}>
-                    ROT {i+1}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TouchableOpacity
+              style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}
+              onPress={() => setRotationExpanded(e => !e)}
+            >
+              <View>
+                <Text style={s.setupTitle}>Starting Rotation</Text>
+                <Text style={{color:C.dim, fontSize:12, fontFamily:'Barlow_400Regular', marginTop:2}}>
+                  ROT {rotation + 1} selected
+                </Text>
+              </View>
+              <Text style={{color:C.accent, fontSize:20, fontFamily:'Barlow_700Bold'}}>
+                {rotationExpanded ? '▲' : '▼'}
+              </Text>
+            </TouchableOpacity>
+
+            {rotationExpanded && (
+              <View style={{flexDirection:'row', flexWrap:'wrap', gap:8, marginTop:12}}>
+                {[0,1,2,3,4,5].map(i => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[s.rotBtn, rotation===i && s.rotBtnSel, {minWidth:60}]}
+                    onPress={() => { setRotation(i); setRotationExpanded(false); }}
+                  >
+                    <Text style={[s.rotBtnText, rotation===i && {color:C.accent, fontFamily:'Barlow_600SemiBold'}]}>
+                      ROT {i+1}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           <View style={s.card}>
@@ -1783,7 +1816,7 @@ ${gsData.matchNotes ? `
   // signals that next touch should be opponent receiving the deflected ball
   const [afterTouchBlock, setAfterTouchBlock] = useState(false);
   const afterTouchBlockRef = useRef(false);
-  const [rallySummary, setRallySummary] = useState(null); // shown briefly after each rally
+
   const [scoreCorrectModal, setScoreCorrectModal] = useState(false);
   const [matchNotes, setMatchNotes] = useState(''); // coaching notes for the match
 
@@ -2340,15 +2373,7 @@ ${gsData.matchNotes ? `
     setAfterTouchBlock(false);
     setRallyEndModal(null);
 
-    // Show rally summary flash for 3 seconds
-    setRallySummary({
-      outcome: modal.outcome,
-      reason: modal.reason,
-      touches: newRally.touches,
-      ourScore: newOurScore,
-      theirScore: newTheirScore,
-    });
-    setTimeout(() => setRallySummary(null), 3000);
+
 
     // ── AUTO-SAVE after every rally ────────────────────────────────────────
     try {
@@ -2489,12 +2514,14 @@ ${gsData.matchNotes ? `
             }));
           }
           setGameState(g => ({ ...g, ourName, theirName, ourScore:0, theirScore:0, ourSets:0, theirSets:0, currentSet:1, setHistory:[], matchOver:false }));
-          setOurRotation(rotation);
           if (sv) {
+            // We serve: user picked our rotation, opp is 1 behind
+            setOurRotation(rotation);
             setOppRotation((rotation - 1 + 6) % 6);
           } else {
-            setOppRotation(0);
-            setOurRotation((0 - 1 + 6) % 6);
+            // They serve: user picked our rotation, opp is 1 ahead of us
+            setOurRotation(rotation);
+            setOppRotation((rotation + 1) % 6);
           }
           setServingUs(sv);
           setScreen('match');
@@ -2599,46 +2626,6 @@ ${gsData.matchNotes ? `
         })}
       </View>
 
-      {/* RALLY SUMMARY FLASH */}
-      {rallySummary && (
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setRallySummary(null)}
-          style={{
-            position:'absolute', bottom:80, left:16, right:IS_TABLET ? 296 : 16,
-            backgroundColor: rallySummary.outcome === 'our' ? 'rgba(181,123,238,0.95)' : 'rgba(232,114,122,0.95)',
-            borderRadius:12, padding:14, zIndex:999,
-            shadowColor:'#000', shadowOpacity:0.4, shadowRadius:12,
-          }}
-        >
-          <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
-            <Text style={{color:'#fff', fontSize:fs(15), fontFamily:'Barlow_700Bold'}}>
-              {rallySummary.outcome === 'our' ? '✓ Our Point' : '✗ Their Point'}
-            </Text>
-            <Text style={{color:'rgba(255,255,255,0.7)', fontSize:fs(11), fontFamily:'Barlow_400Regular'}}>
-              {rallySummary.ourScore} – {rallySummary.theirScore}
-            </Text>
-          </View>
-          <Text style={{color:'rgba(255,255,255,0.8)', fontSize:fs(11), fontFamily:'Barlow_400Regular', marginBottom:8}}>
-            {rallySummary.reason}
-          </Text>
-          <View style={{flexDirection:'row', flexWrap:'wrap', gap:4}}>
-            {rallySummary.touches.map((t, i) => (
-              <View key={i} style={{
-                paddingHorizontal:8, paddingVertical:3, borderRadius:6,
-                backgroundColor:'rgba(0,0,0,0.25)',
-              }}>
-                <Text style={{color:'#fff', fontSize:fs(11), fontFamily:'Barlow_500Medium'}}>
-                  #{t.playerNum} {ACTIONS[t.action]?.label}
-                </Text>
-              </View>
-            ))}
-          </View>
-          <Text style={{color:'rgba(255,255,255,0.5)', fontSize:fs(10), marginTop:6, textAlign:'center'}}>
-            Tap to dismiss
-          </Text>
-        </TouchableOpacity>
-      )}
 
       {/* ACTION POPUP */}
       <ActionPopup popup={popup} setPopup={setPopup} confirmPopup={confirmPopup} />
@@ -2698,20 +2685,23 @@ ${gsData.matchNotes ? `
               </View>
             </View>
 
-            <Text style={[s.popupSectionLabel, {textAlign:'center', marginBottom:10}]}>Choose starting rotation for next set</Text>
+            <Text style={[s.popupSectionLabel, {textAlign:'center', marginBottom:10}]}>Our Starting Rotation for Next Set</Text>
             <View style={{flexDirection:'row', flexWrap:'wrap', gap:8, justifyContent:'center', marginBottom:14}}>
               {[0,1,2,3,4,5].map(i => (
                 <TouchableOpacity
                   key={i}
                   style={[s.rotBtn, {minWidth:60}]}
                   onPress={() => {
-                    const nextServingUs = setResultModal?.winner === 'them';
+                    // Set winner serves next set
+                    const nextServingUs = setResultModal?.winner === 'our';
                     if (nextServingUs) {
+                      // We serve: user picks our rotation, opp is 1 behind
                       setOurRotation(i);
                       setOppRotation((i - 1 + 6) % 6);
                     } else {
-                      setOppRotation(i);
-                      setOurRotation((i - 1 + 6) % 6);
+                      // They serve: user picks our rotation, opp is 1 ahead
+                      setOurRotation(i);
+                      setOppRotation((i + 1) % 6);
                     }
                     setServingUs(nextServingUs);
                     // Apply pending switch if user selected Yes
@@ -2809,13 +2799,13 @@ ${gsData.matchNotes ? `
               style={[s.bigBtn, {backgroundColor: C.green, marginTop:16}]}
               onPress={() => exportToExcel(rallies, stats, ourRoster, gameState)}
             >
-              <Text style={s.bigBtnText}>📥 Export to CSV</Text>
+              <Text style={s.bigBtnText}>Export to CSV</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.bigBtn, {backgroundColor: C.surface, borderWidth:1, borderColor:C.green, marginTop:8}]}
               onPress={() => exportToPDF(rallies, stats, ourRoster, {...gameState, matchNotes})}
             >
-              <Text style={[s.bigBtnText, {color:C.green}]}>📄 Match Report (PDF)</Text>
+              <Text style={[s.bigBtnText, {color:C.green}]}>Match Report (PDF)</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.bigBtn, {backgroundColor: C.accent, marginTop:8}]}
@@ -3139,16 +3129,16 @@ ${gsData.matchNotes ? `
             <Text style={s.modalSub}>Which team caused the net fault?</Text>
             <View style={s.modalBtnRow}>
               <TouchableOpacity
-                style={[s.modalBtn, {borderColor:C.accent, backgroundColor:'rgba(181,123,238,0.15)'}]}
+                style={[s.modalBtn, {borderColor:C.accent, backgroundColor:C.accent}]}
                 onPress={() => confirmNet('our')}
               >
-                <Text style={[s.modalBtnText, {color:C.accent}]}>Our fault</Text>
+                <Text style={[s.modalBtnText, {color:'#fff'}]}>Us</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[s.modalBtn, {borderColor:C.oppTeam, backgroundColor:'rgba(232,114,122,0.15)'}]}
+                style={[s.modalBtn, {borderColor:C.oppTeam, backgroundColor:C.oppTeam}]}
                 onPress={() => confirmNet('them')}
               >
-                <Text style={[s.modalBtnText, {color:C.oppTeam}]}>Their fault</Text>
+                <Text style={[s.modalBtnText, {color:'#fff'}]}>Them</Text>
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={{marginTop:10, alignItems:'center'}} onPress={() => setNetModal(false)}>
@@ -4812,19 +4802,19 @@ function SetupPanel({ gameState, setGameState, ourRotation, setOurRotation, onEx
         style={[s.bigBtn, {backgroundColor:C.green}]}
         onPress={onExport}
       >
-        <Text style={s.bigBtnText}>📥 Export Match to CSV</Text>
+        <Text style={s.bigBtnText}>Export Match to CSV</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[s.bigBtn, {backgroundColor:C.surface, borderWidth:1, borderColor:C.green}]}
         onPress={onPDFExport}
       >
-        <Text style={[s.bigBtnText, {color:C.green}]}>📄 Match Report (PDF)</Text>
+        <Text style={[s.bigBtnText, {color:C.green}]}>Match Report (PDF)</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[s.bigBtn, {backgroundColor:C.surface, borderWidth:1, borderColor:C.accent}]}
         onPress={onGoToSetup}
       >
-        <Text style={[s.bigBtnText, {color:C.accent}]}>⚙️  Back to Setup</Text>
+        <Text style={[s.bigBtnText, {color:C.accent}]}>Back to Setup</Text>
       </TouchableOpacity>
 
       {/* Match Notes */}
@@ -4845,7 +4835,7 @@ function SetupPanel({ gameState, setGameState, ourRotation, setOurRotation, onEx
           flexDirection:'row', gap:8, justifyContent:'center'}]}
         onPress={onToggleTheme}
       >
-        <Text style={[s.bigBtnText, {color:C.dim}]}>{isDark ? '☀️  Light Mode' : '🌙  Dark Mode'}</Text>
+        <Text style={[s.bigBtnText, {color:C.dim}]}>{isDark ? 'Light Mode' : 'Dark Mode'}</Text>
       </TouchableOpacity>
       <View style={s.card}>
         <Text style={s.setupTitle}>Team Names</Text>
@@ -4922,19 +4912,19 @@ const makeStyles = (C) => StyleSheet.create({
   safe:      {flex:1, backgroundColor:C.bg},
   root:      {flex:1, flexDirection:'row'},
   mainPanel: {flex:1, flexDirection:'column'},
-  sidePanel: {width:Math.min(280, SW * 0.22), backgroundColor:C.surface, borderLeftWidth:1, borderLeftColor:C.border},
+  sidePanel: {width:Math.min(280, SW * 0.22), backgroundColor:C.bg, borderLeftWidth:1, borderLeftColor:C.border+'66'},
 
   // Score bar
-  scoreBar:   {flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:C.surface,paddingHorizontal:20,paddingVertical:8,borderBottomWidth:1,borderBottomColor:C.border},
+  scoreBar:   {flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:C.bg,paddingHorizontal:20,paddingVertical:10,borderBottomWidth:1,borderBottomColor:C.border+'88'},
   scoreSide:  {minWidth:120},
-  teamName:   {fontSize:fs(13),color:C.text,letterSpacing:0.5,fontFamily:'Barlow_600SemiBold'},
-  scoreNum:   {fontSize:fs(46),fontWeight:'700',lineHeight:52,color:C.text,fontFamily:'Barlow_700Bold'},
+  teamName:   {fontSize:fs(11),color:C.muted,letterSpacing:2,textTransform:'uppercase',fontFamily:'Barlow_600SemiBold'},
+  scoreNum:   {fontSize:fs(52),fontWeight:'700',lineHeight:56,color:C.text,fontFamily:'Barlow_700Bold',letterSpacing:-1},
   scoreCenter:{alignItems:'center'},
   setLabel:   {fontSize:fs(14),fontWeight:'600',color:C.text,letterSpacing:1,fontFamily:'Barlow_600SemiBold'},
   servingDot:    {width:8,height:8,borderRadius:4,backgroundColor:C.accent},
   rotLabel:      {fontSize:fs(11),color:C.muted,letterSpacing:1,fontFamily:'Barlow_500Medium'},
   setScorebadge: {flexDirection:'row',alignItems:'center',gap:4},
-  setScoreNum:   {fontSize:fs(26),fontWeight:'700',color:C.text,fontFamily:'Barlow_700Bold'},
+  setScoreNum:   {fontSize:fs(28),fontWeight:'700',color:C.text,fontFamily:'Barlow_700Bold',letterSpacing:-0.5},
   setScoreSep:   {fontSize:fs(14),color:C.muted},
 
   // Court container
@@ -4960,7 +4950,7 @@ const makeStyles = (C) => StyleSheet.create({
   floorDot:   {position:'absolute',width:14,height:14,borderRadius:7,backgroundColor:C.red,borderWidth:2,borderColor:'#fff'},
 
   // Players
-  playerCircle:{position:'absolute',width:fs(76),height:fs(76),borderRadius:fs(38),alignItems:'center',justifyContent:'center',borderWidth:2},
+  playerCircle:{position:'absolute',width:fs(76),height:fs(76),borderRadius:fs(38),alignItems:'center',justifyContent:'center',borderWidth:2.5},
   ourCircle:    {backgroundColor:'#4A2D7A'},
   liberoCircle: {backgroundColor:'#7A5C10'},
   oppCircle:       {backgroundColor:'#7A2830'},
@@ -4979,7 +4969,7 @@ const makeStyles = (C) => StyleSheet.create({
   formationTagText: {fontSize:fs(9),fontWeight:'700',color:C.amber,letterSpacing:1},
 
   // Pre-rally controls
-  serveOpt:      {flex:1,padding:8,borderRadius:8,borderWidth:1,borderColor:C.border,backgroundColor:C.card,alignItems:'center'},
+  serveOpt:      {flex:1,padding:12,borderRadius:12,borderWidth:1.5,borderColor:C.border+'66',backgroundColor:C.card,alignItems:'center'},
   serveOptSel:   {borderColor:C.accent,backgroundColor:'rgba(181,123,238,0.1)'},
   serveOptSelOpp:{borderColor:C.oppTeam,backgroundColor:'#7A2830'},
   serveOptText:  {fontSize:fs(12),fontWeight:'500',color:C.dim},
@@ -5021,7 +5011,7 @@ const makeStyles = (C) => StyleSheet.create({
 
   // Modals
   modalOverlay:    {flex:1,backgroundColor:'rgba(0,0,0,0.75)',alignItems:'center',justifyContent:'center'},
-  modalCard:       {backgroundColor:C.card,borderRadius:14,padding:20,width:300,borderWidth:1,borderColor:C.border},
+  modalCard:       {backgroundColor:C.card,borderRadius:20,padding:22,width:310,borderWidth:1,borderColor:C.border+'88'},
   modalTitle:      {fontSize:fs(18),fontWeight:'700',color:C.text,marginBottom:4,fontFamily:'Barlow_700Bold'},
   modalSub:        {fontSize:fs(13),color:C.dim,marginBottom:14,fontFamily:'Barlow_400Regular'},
   modalOutcomeRow: {marginBottom:12},
@@ -5054,18 +5044,18 @@ const makeStyles = (C) => StyleSheet.create({
   // Stats page
   statGrid:      {flexDirection:'row',flexWrap:'wrap',gap:8},
   sectionLabel:  {fontSize:fs(13),color:C.text,letterSpacing:1,textTransform:'uppercase',fontFamily:'Barlow_600SemiBold',marginBottom:6},
-  statCard:      {width:'48%',backgroundColor:C.card,borderWidth:1,borderColor:C.border,borderRadius:10,padding:12},
-  statLabel:     {fontSize:fs(10),color:C.muted,textTransform:'uppercase',letterSpacing:1,fontFamily:'Barlow_500Medium'},
-  statValue:     {fontSize:fs(26),fontWeight:'600',color:C.text,marginTop:2,fontFamily:'Barlow_600SemiBold'},
+  statCard:      {width:'48%',backgroundColor:C.card,borderWidth:1,borderColor:C.border+'88',borderRadius:14,padding:14},
+  statLabel:     {fontSize:fs(10),color:C.muted,textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Barlow_600SemiBold'},
+  statValue:     {fontSize:fs(30),fontWeight:'700',color:C.text,marginTop:4,fontFamily:'Barlow_700Bold',letterSpacing:-0.5},
   statSub:       {fontSize:fs(11),color:C.dim,marginTop:2},
   playerStatRow: {flexDirection:'row',alignItems:'center',gap:10,paddingVertical:10,borderBottomWidth:1,borderBottomColor:C.border},
   psnNum:        {width:32,height:32,borderRadius:16,backgroundColor:C.card,borderWidth:1,borderColor:C.border,alignItems:'center',justifyContent:'center'},
   psnNumText:    {fontSize:fs(12),fontWeight:'600',color:C.text},
 
   // Setup
-  card:       {backgroundColor:C.card,borderWidth:1,borderColor:C.border,borderRadius:10,padding:12},
+  card:       {backgroundColor:C.card,borderWidth:1,borderColor:C.border+'88',borderRadius:14,padding:14},
   setupTitle: {fontSize:fs(13),fontWeight:'600',color:C.text,marginBottom:10},
-  input:      {backgroundColor:C.surface,borderWidth:1,borderColor:C.border,borderRadius:8,color:C.text,fontSize:fs(14),padding:9,fontFamily:'Barlow_400Regular'},
+  input:      {backgroundColor:C.bg,borderWidth:1,borderColor:C.border,borderRadius:10,color:C.text,fontSize:fs(14),padding:11,fontFamily:'Barlow_400Regular'},
   rotBtn:     {paddingHorizontal:14,paddingVertical:8,borderRadius:8,borderWidth:1,borderColor:C.border,backgroundColor:C.surface},
   rotBtnSel:  {borderColor:C.accent,backgroundColor:'rgba(181,123,238,0.1)'},
   rotBtnText: {fontSize:fs(12),fontWeight:'500',color:C.dim},
@@ -5073,7 +5063,7 @@ const makeStyles = (C) => StyleSheet.create({
 
   // Misc
   emptyText:    {textAlign:'center',color:C.muted,fontSize:fs(13)},
-  navBar:       {flexDirection:'row',backgroundColor:C.surface,borderTopWidth:1,borderTopColor:C.border},
+  navBar:       {flexDirection:'row',backgroundColor:C.bg,borderTopWidth:1,borderTopColor:C.border+'66'},
   navBtn:       {flex:1,alignItems:'center',paddingBottom:10,gap:4},
   navActiveLine:{height:2,width:'60%',borderRadius:1,backgroundColor:'transparent',marginBottom:0},
   navLabel:     {fontSize:fs(10),fontWeight:'500',fontFamily:'Barlow_500Medium'},
