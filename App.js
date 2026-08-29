@@ -134,109 +134,96 @@ const DEFAULT_OPP_ROSTER = [
 // Libero swap: Rot 1,2,4,5 = L replaces M1/M2; Rot 3,6 = no swap
 
 const OPP_BASE_SLOTS = [
-  // ROT1: S serves (their back-right=x:1/6,y:0.125). S/OPP diagonal. L replaces M2.
-  { S:{x:1/6,y:0.125}, O1:{x:1/6,y:0.375}, M1:{x:3/6,y:0.375}, OPP:{x:5/6,y:0.375}, O2:{x:5/6,y:0.125}, L:{x:3/6,y:0.125} },
-  // ROT2: O1 serves. S@back-mid. L replaces M2.
-  { O1:{x:1/6,y:0.125}, M1:{x:1/6,y:0.375}, OPP:{x:3/6,y:0.375}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, S:{x:3/6,y:0.125} },
-  // ROT3: M1 serves. S@back-left. No libero (MB serving).
-  { M1:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O2:{x:3/6,y:0.375}, M2:{x:5/6,y:0.375}, S:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125} },
-  // ROT4: OPP serves. S@front-left(their pov). L replaces M1.
-  { OPP:{x:1/6,y:0.125}, O2:{x:1/6,y:0.375}, M2:{x:3/6,y:0.375}, S:{x:5/6,y:0.375}, O1:{x:5/6,y:0.125}, L:{x:3/6,y:0.125} },
-  // ROT5: O2 serves. S@front-mid. L replaces M1.
-  { O2:{x:1/6,y:0.125}, M2:{x:1/6,y:0.375}, S:{x:3/6,y:0.375}, O1:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, OPP:{x:3/6,y:0.125} },
-  // ROT6: M2 serves. S@front-right(their pov). No libero (MB serving).
-  { M2:{x:1/6,y:0.125}, S:{x:1/6,y:0.375}, O1:{x:3/6,y:0.375}, M1:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125} },
+  // ROT1: mirrored — their front: O1(x5/6) M2(x3/6) OPP(x1/6) | back: L(x5/6) O2(x3/6) S(x1/6)
+  { O1:{x:5/6,y:0.375}, M2:{x:3/6,y:0.375}, OPP:{x:1/6,y:0.375}, L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
+  // ROT2: mirrored
+  { O2:{x:5/6,y:0.375}, M2:{x:3/6,y:0.375}, OPP:{x:1/6,y:0.375}, L:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
+  // ROT3: mirrored
+  { O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, OPP:{x:1/6,y:0.375}, L:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
+  // ROT4: mirrored
+  { O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, S:{x:1/6,y:0.375},   L:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125}, OPP:{x:1/6,y:0.125} },
+  // ROT5: mirrored
+  { O1:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, S:{x:1/6,y:0.375},   L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, OPP:{x:1/6,y:0.125} },
+  // ROT6: mirrored
+  { O1:{x:5/6,y:0.375}, M2:{x:3/6,y:0.375}, S:{x:1/6,y:0.375},   L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, OPP:{x:1/6,y:0.125} },
 ];
 
 // Opp serve receive — W formation in opponent half (y=0 to 0.5)
 // Their server at x:1/6 (their back-right = pos1 from their perspective)
 // x mirrored from our RECEIVE_SLOTS
 const OPP_RECEIVE_SLOTS = [
-  // ROT1: S@x:1/6 serves. W receive spread. L replaces M2.
-  { S:{x:1/6,y:0.08}, O1:{x:1/6,y:0.28}, M1:{x:3/6,y:0.38}, OPP:{x:5/6,y:0.28}, O2:{x:5/6,y:0.15}, L:{x:3/6,y:0.18} },
-  // ROT2: O1 serves. S@back-mid. L replaces M2.
-  { O1:{x:1/6,y:0.08}, M1:{x:1/6,y:0.35}, OPP:{x:3/6,y:0.40}, O2:{x:5/6,y:0.28}, L:{x:5/6,y:0.15}, S:{x:3/6,y:0.15} },
-  // ROT3: M1 serves. S@back-left. L replaces M1.
-  { M1:{x:1/6,y:0.08}, OPP:{x:1/6,y:0.35}, O2:{x:3/6,y:0.40}, L:{x:5/6,y:0.28}, S:{x:5/6,y:0.12}, O1:{x:3/6,y:0.18} },
-  // ROT4: OPP serves. S@front. L replaces M1.
-  { OPP:{x:1/6,y:0.08}, O2:{x:1/6,y:0.32}, M2:{x:3/6,y:0.40}, S:{x:5/6,y:0.35}, O1:{x:5/6,y:0.18}, L:{x:3/6,y:0.18} },
-  // ROT5: O2 serves. S@front-mid. L replaces M1.
-  { O2:{x:1/6,y:0.08}, M2:{x:1/6,y:0.35}, S:{x:3/6,y:0.40}, O1:{x:5/6,y:0.28}, L:{x:5/6,y:0.15}, OPP:{x:3/6,y:0.12} },
-  // ROT6: M2 serves. S@front. L replaces M2.
-  { M2:{x:1/6,y:0.08}, S:{x:1/6,y:0.35}, O1:{x:3/6,y:0.40}, M1:{x:5/6,y:0.35}, OPP:{x:5/6,y:0.15}, O2:{x:3/6,y:0.18} },
+  // ROT1: mirror of OUR_RECEIVE ROT1 (x→1-x, y→1-y)
+  { OPP:{x:5/6,y:0.40}, M2:{x:3/6,y:0.40}, O2:{x:5/6,y:0.20}, L:{x:3/6,y:0.20}, O1:{x:1/6,y:0.25}, S:{x:1/6,y:0.08} },
+  // ROT2
+  { OPP:{x:3/6,y:0.42}, S:{x:3/6,y:0.32}, M2:{x:1/6,y:0.38}, O2:{x:5/6,y:0.18}, L:{x:3/6,y:0.18}, O1:{x:1/6,y:0.18} },
+  // ROT3
+  { M1:{x:5/6,y:0.42}, S:{x:5/6,y:0.32}, OPP:{x:1/6,y:0.40}, O2:{x:5/6,y:0.18}, O1:{x:3/6,y:0.18}, L:{x:1/6,y:0.18} },
+  // ROT4
+  { S:{x:5/6,y:0.42}, M1:{x:4/6,y:0.32}, O2:{x:5/6,y:0.18}, O1:{x:3.5/6,y:0.18}, L:{x:2.2/6,y:0.18}, OPP:{x:0.8/6,y:0.09} },
+  // ROT5
+  { S:{x:3/6,y:0.40}, M1:{x:1/6,y:0.40}, O1:{x:5/6,y:0.18}, L:{x:3/6,y:0.18}, OPP:{x:1.8/6,y:0.09}, O2:{x:1/6,y:0.18} },
+  // ROT6
+  { M2:{x:5/6,y:0.40}, S:{x:1/6,y:0.40}, OPP:{x:5.5/6,y:0.08}, O1:{x:4.2/6,y:0.18}, O2:{x:3/6,y:0.18}, L:{x:1/6,y:0.18} },
 ];
 
 // Opp after-receive base — direct xy coords (top half, x mirrored)
 // front row y=0.375, back row y=0.125
 // x: left=1/6, mid=3/6, right=5/6 BUT mirrored so col0=right=5/6
 const OPP_RECEIVE_BASE_SLOTS = [
-  // Must match OPP_BASE_SLOTS exactly
-  { S:{x:1/6,y:0.125}, O1:{x:1/6,y:0.375}, M1:{x:3/6,y:0.375}, OPP:{x:5/6,y:0.375}, O2:{x:5/6,y:0.125}, L:{x:3/6,y:0.125} },
-  { O1:{x:1/6,y:0.125}, M1:{x:1/6,y:0.375}, OPP:{x:3/6,y:0.375}, O2:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, S:{x:3/6,y:0.125} },
-  { M1:{x:1/6,y:0.125}, OPP:{x:1/6,y:0.375}, O2:{x:3/6,y:0.375}, M2:{x:5/6,y:0.375}, S:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125} },
-  { OPP:{x:1/6,y:0.125}, O2:{x:1/6,y:0.375}, M2:{x:3/6,y:0.375}, S:{x:5/6,y:0.375}, O1:{x:5/6,y:0.125}, L:{x:3/6,y:0.125} },
-  { O2:{x:1/6,y:0.125}, M2:{x:1/6,y:0.375}, S:{x:3/6,y:0.375}, O1:{x:5/6,y:0.375}, L:{x:5/6,y:0.125}, OPP:{x:3/6,y:0.125} },
-  { M2:{x:1/6,y:0.125}, S:{x:1/6,y:0.375}, O1:{x:3/6,y:0.375}, M1:{x:5/6,y:0.375}, OPP:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125} },
+  { O1:{x:5/6,y:0.375}, M2:{x:3/6,y:0.375}, OPP:{x:1/6,y:0.375}, L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
+  { O2:{x:5/6,y:0.375}, M2:{x:3/6,y:0.375}, OPP:{x:1/6,y:0.375}, L:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
+  { O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, OPP:{x:1/6,y:0.375}, L:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125}, S:{x:1/6,y:0.125} },
+  { O2:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, S:{x:1/6,y:0.375},   L:{x:5/6,y:0.125}, O1:{x:3/6,y:0.125}, OPP:{x:1/6,y:0.125} },
+  { O1:{x:5/6,y:0.375}, M1:{x:3/6,y:0.375}, S:{x:1/6,y:0.375},   L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, OPP:{x:1/6,y:0.125} },
+  { O1:{x:5/6,y:0.375}, M2:{x:3/6,y:0.375}, S:{x:1/6,y:0.375},   L:{x:5/6,y:0.125}, O2:{x:3/6,y:0.125}, OPP:{x:1/6,y:0.125} },
 ];
 
 // ── BASE SLOTS (OUR TEAM) ─────────────────────────────────────────────────────
 // L (libero) replaces the back-row MB in Rot 1,2,4,5
 // Rot 3,6: MB stays in back row (libero not on court)
 const BASE_SLOTS = [
-  // ROT1: S serves (pos1=back-right). S diagonal from OPP. L replaces back M2.
-  // Positions: S@pos1, O1@pos2, M1@pos3, OPP@pos4, O2@pos5, L@pos6(replacing M2)
-  { S:{r:1,c:2}, O1:{r:0,c:2}, M1:{r:0,c:1}, OPP:{r:0,c:0}, O2:{r:1,c:0}, L:{r:1,c:1}  },
-  // ROT2: O1 serves (pos1). S@pos6. L replaces back M2.
-  // Positions: O1@pos1, M1@pos2, OPP@pos3, O2@pos4, L@pos5(replacing M2), S@pos6
-  { O1:{r:1,c:2}, M1:{r:0,c:2}, OPP:{r:0,c:1}, O2:{r:0,c:0}, L:{r:1,c:0}, S:{r:1,c:1}  },
-  // ROT3: M1 serves (pos1). S@pos5. No libero (MB serving).
-  // Positions: M1@pos1, OPP@pos2, O2@pos3, M2@pos4, S@pos5, O1@pos6
-  { M1:{r:1,c:2}, OPP:{r:0,c:2}, O2:{r:0,c:1}, M2:{r:0,c:0}, S:{r:1,c:0}, O1:{r:1,c:1} },
-  // ROT4: OPP serves (pos1). S@pos4. L replaces back M1.
-  // Positions: OPP@pos1, O2@pos2, M2@pos3, S@pos4, O1@pos5, L@pos6(replacing M1)
-  { OPP:{r:1,c:2}, O2:{r:0,c:2}, M2:{r:0,c:1}, S:{r:0,c:0}, O1:{r:1,c:0}, L:{r:1,c:1}  },
-  // ROT5: O2 serves (pos1). S@pos3. L replaces back M1.
-  // Positions: O2@pos1, M2@pos2, S@pos3, O1@pos4, L@pos5(replacing M1), OPP@pos6
-  { O2:{r:1,c:2}, M2:{r:0,c:2}, S:{r:0,c:1}, O1:{r:0,c:0}, L:{r:1,c:0},  OPP:{r:1,c:1} },
-  // ROT6: M2 serves (pos1). S@pos2. No libero (MB serving).
-  // Positions: M2@pos1, S@pos2, O1@pos3, M1@pos4, OPP@pos5, O2@pos6
-  { M2:{r:1,c:2}, S:{r:0,c:2}, O1:{r:0,c:1}, M1:{r:0,c:0}, OPP:{r:1,c:0}, O2:{r:1,c:1} },
+  // ROT1: Front:O1(L) M2(M) OPP(R) | Back:L(L) O2(M) S(R) — S serves
+  { O1:{r:0,c:0}, M2:{r:0,c:1}, OPP:{r:0,c:2}, L:{r:1,c:0}, O2:{r:1,c:1}, S:{r:1,c:2} },
+  // ROT2: Front:O2(L) M2(M) OPP(R) | Back:L(L) O1(M) S(R) — S serves
+  { O2:{r:0,c:0}, M2:{r:0,c:1}, OPP:{r:0,c:2}, L:{r:1,c:0}, O1:{r:1,c:1}, S:{r:1,c:2} },
+  // ROT3: Front:O2(L) M1(M) OPP(R) | Back:L(L) O1(M) S(R) — S serves
+  { O2:{r:0,c:0}, M1:{r:0,c:1}, OPP:{r:0,c:2}, L:{r:1,c:0}, O1:{r:1,c:1}, S:{r:1,c:2} },
+  // ROT4: Front:O2(L) M1(M) S(R)   | Back:L(L) O1(M) OPP(R) — OPP serves
+  { O2:{r:0,c:0}, M1:{r:0,c:1}, S:{r:0,c:2},   L:{r:1,c:0}, O1:{r:1,c:1}, OPP:{r:1,c:2} },
+  // ROT5: Front:O1(L) M1(M) S(R)   | Back:L(L) O2(M) OPP(R) — OPP serves
+  { O1:{r:0,c:0}, M1:{r:0,c:1}, S:{r:0,c:2},   L:{r:1,c:0}, O2:{r:1,c:1}, OPP:{r:1,c:2} },
+  // ROT6: Front:O1(L) M2(M) S(R)   | Back:L(L) O2(M) OPP(R) — OPP serves
+  { O1:{r:0,c:0}, M2:{r:0,c:1}, S:{r:0,c:2},   L:{r:1,c:0}, O2:{r:1,c:1}, OPP:{r:1,c:2} },
 ];
 
 // ── SERVE RECEIVE SLOTS (fine grid, fractional x/y) ──────────────────────────
 // Spread receive formation — receivers in W pattern, S behind front row
 // L replaces back-row MB in all rotations; when MB serves, L replaces them
 const RECEIVE_SLOTS = [
-  // ROT1: S@back-right serves → receivers spread. L replaces M2 in back.
-  { S:{x:5/6,y:0.92},  O1:{x:5/6,y:0.72}, M1:{x:3/6,y:0.62}, OPP:{x:1/6,y:0.72}, O2:{x:1/6,y:0.85}, L:{x:3/6,y:0.82} },
-  // ROT2: O1@back-right serves. S@back-mid. L replaces M2.
-  { O1:{x:5/6,y:0.92}, M1:{x:5/6,y:0.65}, OPP:{x:3/6,y:0.60}, O2:{x:1/6,y:0.72}, L:{x:1/6,y:0.85},  S:{x:3/6,y:0.85}  },
-  // ROT3: M1@back-right serves. S@back-left. L replaces M1(serving). W receive.
-  { M1:{x:5/6,y:0.92}, OPP:{x:5/6,y:0.65}, O2:{x:3/6,y:0.60}, L:{x:1/6,y:0.72},  S:{x:1/6,y:0.88},  O1:{x:3/6,y:0.82} },
-  // ROT4: OPP@back-right serves. S@front-left. L replaces M1 in back.
-  { OPP:{x:5/6,y:0.92},O2:{x:5/6,y:0.68}, M2:{x:3/6,y:0.60}, S:{x:1/6,y:0.65},   O1:{x:1/6,y:0.82}, L:{x:3/6,y:0.82}  },
-  // ROT5: O2@back-right serves. S@front-mid. L replaces M1 in back.
-  { O2:{x:5/6,y:0.92}, M2:{x:5/6,y:0.65}, S:{x:3/6,y:0.60},  O1:{x:1/6,y:0.72},  L:{x:1/6,y:0.85},  OPP:{x:3/6,y:0.88} },
-  // ROT6: M2@back-right serves. S@front-right. L replaces M2(serving).
-  { M2:{x:5/6,y:0.92}, S:{x:5/6,y:0.65},  O1:{x:3/6,y:0.60}, M1:{x:1/6,y:0.65},  OPP:{x:1/6,y:0.85},O2:{x:3/6,y:0.82}  },
+  // ROT1: OPP and M2 front-ish, O2 O1 back, S deep back-right
+  { OPP:{x:1/6,y:0.60}, M2:{x:3/6,y:0.60}, O2:{x:1/6,y:0.80}, L:{x:3/6,y:0.80}, O1:{x:5/6,y:0.75}, S:{x:5/6,y:0.92} },
+  // ROT2: OPP and S front-mid, M2 front-right, O2 O1 back
+  { OPP:{x:3/6,y:0.58}, S:{x:3/6,y:0.68}, M2:{x:5/6,y:0.62}, O2:{x:1/6,y:0.82}, L:{x:3/6,y:0.82}, O1:{x:5/6,y:0.82} },
+  // ROT3: M1 and S front-left, OPP front-right, O2 O1 back
+  { M1:{x:1/6,y:0.58}, S:{x:1/6,y:0.68}, OPP:{x:5/6,y:0.60}, O2:{x:1/6,y:0.82}, O1:{x:3/6,y:0.82}, L:{x:5/6,y:0.82} },
+  // ROT4: S front-left, M1 mid, O2 O1 L OPP back
+  { S:{x:1/6,y:0.58}, M1:{x:2/6,y:0.68}, O2:{x:1/6,y:0.82}, O1:{x:2.5/6,y:0.82}, L:{x:3.8/6,y:0.82}, OPP:{x:5.2/6,y:0.91} },
+  // ROT5: S front-mid, M1 front-right, O1 L back, OPP deep right
+  { S:{x:3/6,y:0.60}, M1:{x:5/6,y:0.60}, O1:{x:1/6,y:0.82}, L:{x:3/6,y:0.82}, OPP:{x:4.2/6,y:0.91}, O2:{x:5/6,y:0.82} },
+  // ROT6: M2 front-left, S front-right, OPP deep left, O1 O2 L back
+  { M2:{x:1/6,y:0.60}, S:{x:5/6,y:0.60}, OPP:{x:0.5/6,y:0.92}, O1:{x:1.8/6,y:0.82}, O2:{x:3/6,y:0.82}, L:{x:5/6,y:0.82} },
 ];
 
 // ── AFTER RECEIVE → BASE SLOTS ────────────────────────────────────────────────
 // After first touch players return to base rotation positions
 // These MUST match BASE_SLOTS exactly
 const RECEIVE_BASE_SLOTS = [
-  // ROT1: matches BASE_SLOTS ROT1
-  { S:{r:1,c:2}, O1:{r:0,c:2}, M1:{r:0,c:1}, OPP:{r:0,c:0}, O2:{r:1,c:0}, L:{r:1,c:1}  },
-  // ROT2: matches BASE_SLOTS ROT2
-  { O1:{r:1,c:2}, M1:{r:0,c:2}, OPP:{r:0,c:1}, O2:{r:0,c:0}, L:{r:1,c:0}, S:{r:1,c:1}  },
-  // ROT3: matches BASE_SLOTS ROT3 (no L, M1 was serving)
-  { M1:{r:1,c:2}, OPP:{r:0,c:2}, O2:{r:0,c:1}, M2:{r:0,c:0}, S:{r:1,c:0}, O1:{r:1,c:1} },
-  // ROT4: matches BASE_SLOTS ROT4
-  { OPP:{r:1,c:2}, O2:{r:0,c:2}, M2:{r:0,c:1}, S:{r:0,c:0}, O1:{r:1,c:0}, L:{r:1,c:1}  },
-  // ROT5: matches BASE_SLOTS ROT5
-  { O2:{r:1,c:2}, M2:{r:0,c:2}, S:{r:0,c:1}, O1:{r:0,c:0}, L:{r:1,c:0},  OPP:{r:1,c:1} },
-  // ROT6: matches BASE_SLOTS ROT6 (no L, M2 was serving)
-  { M2:{r:1,c:2}, S:{r:0,c:2}, O1:{r:0,c:1}, M1:{r:0,c:0}, OPP:{r:1,c:0}, O2:{r:1,c:1} },
+  { O1:{r:0,c:0}, M2:{r:0,c:1}, OPP:{r:0,c:2}, L:{r:1,c:0}, O2:{r:1,c:1}, S:{r:1,c:2} },
+  { O2:{r:0,c:0}, M2:{r:0,c:1}, OPP:{r:0,c:2}, L:{r:1,c:0}, O1:{r:1,c:1}, S:{r:1,c:2} },
+  { O2:{r:0,c:0}, M1:{r:0,c:1}, OPP:{r:0,c:2}, L:{r:1,c:0}, O1:{r:1,c:1}, S:{r:1,c:2} },
+  { O2:{r:0,c:0}, M1:{r:0,c:1}, S:{r:0,c:2},   L:{r:1,c:0}, O1:{r:1,c:1}, OPP:{r:1,c:2} },
+  { O1:{r:0,c:0}, M1:{r:0,c:1}, S:{r:0,c:2},   L:{r:1,c:0}, O2:{r:1,c:1}, OPP:{r:1,c:2} },
+  { O1:{r:0,c:0}, M2:{r:0,c:1}, S:{r:0,c:2},   L:{r:1,c:0}, O2:{r:1,c:1}, OPP:{r:1,c:2} },
 ];
 
 // Convert a BASE {r,c} slot to normalised {x,y} for our team (bottom half)
@@ -583,27 +570,27 @@ function inferNextAction(touchCount, servingUs) {
 
 // ── HIGHLIGHT RULES ──────────────────────────────────────────────────────────
 // Server for each rotation (role that just crossed from front to back-right)
-const SERVERS = ['S', 'O1', 'M1', 'OPP', 'O2', 'M2'];
-// ROT1:S ROT2:O1 ROT3:M1(L replaces) ROT4:OPP ROT5:O2 ROT6:M2(L replaces)
+const SERVERS = ['S','S','S','OPP','OPP','OPP'];
+// ROT1-3: S serves (back-right). ROT4-6: OPP serves (back-right).
 
 // Back row for SERVING team (libero not on court when MB is serving in Rot 3, 6)
 const BACK_ROW_SERVE = [
-  ['S',  'O2', 'L'],   // ROT1: S serves, back = S O2 L(replacing M2)
-  ['O1', 'L',  'S'],   // ROT2: O1 serves, back = O1 L(replacing M2) S
-  ['M1', 'S',  'O1'],  // ROT3: M1 serves (no L), back = M1 S O1
-  ['OPP','O1', 'L'],   // ROT4: OPP serves, back = OPP O1 L(replacing M1)
-  ['O2', 'L',  'OPP'], // ROT5: O2 serves, back = O2 L(replacing M1) OPP
-  ['M2', 'OPP','O2'],  // ROT6: M2 serves (no L), back = M2 OPP O2
+  ['L','O2','S'],   // ROT1
+  ['L','O1','S'],   // ROT2
+  ['L','O1','S'],   // ROT3
+  ['L','O1','OPP'], // ROT4
+  ['L','O2','OPP'], // ROT5
+  ['L','O2','OPP'], // ROT6
 ];
 
 // Back row for RECEIVING team (libero always on court)
 const BACK_ROW_RECEIVE = [
-  ['S',  'O2', 'L'],   // ROT1: L replaces M2 in back
-  ['O1', 'L',  'S'],   // ROT2: L replaces M2 in back
-  ['L',  'S',  'O1'],  // ROT3: L replaces M1(was serving)
-  ['OPP','O1', 'L'],   // ROT4: L replaces M1 in back
-  ['O2', 'L',  'OPP'], // ROT5: L replaces M1 in back
-  ['L',  'OPP','O2'],  // ROT6: L replaces M2(was serving)
+  ['L','O2','S'],   // ROT1
+  ['L','O1','S'],   // ROT2
+  ['L','O1','S'],   // ROT3
+  ['L','O1','OPP'], // ROT4
+  ['L','O2','OPP'], // ROT5
+  ['L','O2','OPP'], // ROT6
 ];
 
 // Alias for backward compat — defaults to receive version
@@ -612,23 +599,23 @@ const BACK_ROW = BACK_ROW_RECEIVE;
 // Front row attack highlights per rotation
 // Rot 1-3: full front row. Rot 4-6: replace S with OPP (S doesn't attack)
 const ATTACKERS = [
-  ['O1', 'M1', 'OPP'], // ROT1: front = O1 M1 OPP
-  ['M1', 'OPP', 'O2'], // ROT2: front = M1 OPP O2
-  ['OPP','O2', 'M2'],  // ROT3: front = OPP O2 M2
-  ['O2', 'M2', 'S'],   // ROT4: front = O2 M2 S
-  ['M2', 'S',  'O1'],  // ROT5: front = M2 S O1
-  ['S',  'O1', 'M1'],  // ROT6: front = S O1 M1
+  ['O1','M2','OPP'], // ROT1
+  ['O2','M2','OPP'], // ROT2
+  ['O2','M1','OPP'], // ROT3
+  ['O2','M1','S'],   // ROT4
+  ['O1','M1','S'],   // ROT5
+  ['O1','M2','S'],   // ROT6
 ];
 
 // Front row blockers per rotation — who should jump when opponent attacks
 // Same as ATTACKERS but for our team defending
 const BLOCKERS = [
-  ['O1', 'M1', 'OPP'], // ROT1
-  ['M1', 'OPP', 'O2'], // ROT2
-  ['OPP','O2', 'M2'],  // ROT3
-  ['O2', 'M2', 'S'],   // ROT4
-  ['M2', 'S',  'O1'],  // ROT5
-  ['S',  'O1', 'M1'],  // ROT6
+  ['O1','M2','OPP'], // ROT1
+  ['O2','M2','OPP'], // ROT2
+  ['O2','M1','OPP'], // ROT3
+  ['O2','M1','S'],   // ROT4
+  ['O1','M1','S'],   // ROT5
+  ['O1','M2','S'],   // ROT6
 ];
 
 // Returns true if the next touch is expected to be OUR team
@@ -731,32 +718,32 @@ function getOppBlockerIds(touchCount, servingUs, rotIdx, oppLineup, touches) {
 // Opp back row per rotation (for mid-rally receives/digs)
 // OPP back row — same split logic
 const OPP_BACK_ROW_SERVE = [
-  ['S',  'O2', 'L'],   // ROT1: S serves, back = S O2 L(M2)
-  ['O1', 'L',  'S'],   // ROT2: O1 serves, back = O1 L(M2) S
-  ['M1', 'S',  'O1'],  // ROT3: M1 serves (no L), back = M1 S O1
-  ['OPP','O1', 'L'],   // ROT4: OPP serves, back = OPP O1 L(M1)
-  ['O2', 'L',  'OPP'], // ROT5: O2 serves, back = O2 L(M1) OPP
-  ['M2', 'OPP','O2'],  // ROT6: M2 serves (no L), back = M2 OPP O2
+  ['L','O2','S'],   // ROT1
+  ['L','O1','S'],   // ROT2
+  ['L','O1','S'],   // ROT3
+  ['L','O1','OPP'], // ROT4
+  ['L','O2','OPP'], // ROT5
+  ['L','O2','OPP'], // ROT6
 ];
 const OPP_BACK_ROW_RECEIVE = [
-  ['S',  'O2', 'L'],   // ROT1: L replaces M2
-  ['O1', 'L',  'S'],   // ROT2: L replaces M2
-  ['L',  'S',  'O1'],  // ROT3: L replaces M1(was serving)
-  ['OPP','O1', 'L'],   // ROT4: L replaces M1
-  ['O2', 'L',  'OPP'], // ROT5: L replaces M1
-  ['L',  'OPP','O2'],  // ROT6: L replaces M2(was serving)
+  ['L','O2','S'],   // ROT1
+  ['L','O1','S'],   // ROT2
+  ['L','O1','S'],   // ROT3
+  ['L','O1','OPP'], // ROT4
+  ['L','O2','OPP'], // ROT5
+  ['L','O2','OPP'], // ROT6
 ];
 const OPP_BACK_ROW = OPP_BACK_ROW_RECEIVE;
 
 // Opp front row attackers per rotation
 // Rot 1-3: full front row. Rot 4-6: OPP highlighted instead of S
 const OPP_ATTACKERS = [
-  ['O1', 'M1', 'OPP'], // ROT1
-  ['M1', 'OPP', 'O2'], // ROT2
-  ['OPP','O2', 'M2'],  // ROT3
-  ['O2', 'M2', 'S'],   // ROT4
-  ['M2', 'S',  'O1'],  // ROT5
-  ['S',  'O1', 'M1'],  // ROT6
+  ['O1','M2','OPP'], // ROT1
+  ['O2','M2','OPP'], // ROT2
+  ['O2','M1','OPP'], // ROT3
+  ['O2','M1','S'],   // ROT4
+  ['O1','M1','S'],   // ROT5
+  ['O1','M2','S'],   // ROT6
 ];
 
 // Returns array of opponent player IDs to highlight
@@ -982,6 +969,8 @@ function SetupScreen({ squad, onSaveSquad, onStartMatch }) {
   const [ourName, setOurName] = useState('');
   const [theirName, setTheirName] = useState('');
   const [rotation, setRotation] = useState(0);
+  // Auto-update default rotation when serve changes:
+  // We serve → we default to ROT1. They serve → we default to ROT6 (so opp = ROT1)
   const [servingUs, setServingUs] = useState(true);
   // Opponent jersey numbers (7 players: S, O1, O2, M1, M2, OPP, L)
   const OPP_ROLES_ORDER = ['S','O1','O2','M1','M2','OPP','L'];
@@ -2515,15 +2504,9 @@ ${gsData.matchNotes ? `
             }));
           }
           setGameState(g => ({ ...g, ourName, theirName, ourScore:0, theirScore:0, ourSets:0, theirSets:0, currentSet:1, setHistory:[], matchOver:false }));
-          if (sv) {
-            // We serve: user picked our rotation, opp is 1 behind
-            setOurRotation(rotation);
-            setOppRotation((rotation - 1 + 6) % 6);
-          } else {
-            // They serve: user picked our rotation, opp is 1 ahead of us
-            setOurRotation(rotation);
-            setOppRotation((rotation + 1) % 6);
-          }
+          // Both teams start in user-chosen rotation (default ROT1)
+          setOurRotation(rotation);
+          setOppRotation(0);
           setServingUs(sv);
           setScreen('match');
           setPage('match');
@@ -2693,17 +2676,10 @@ ${gsData.matchNotes ? `
                   key={i}
                   style={[s.rotBtn, {minWidth:60}]}
                   onPress={() => {
-                    // Set winner serves next set
+                    // Both teams start at chosen rotation for next set
                     const nextServingUs = setResultModal?.winner === 'our';
-                    if (nextServingUs) {
-                      // We serve: user picks our rotation, opp is 1 behind
-                      setOurRotation(i);
-                      setOppRotation((i - 1 + 6) % 6);
-                    } else {
-                      // They serve: user picks our rotation, opp is 1 ahead
-                      setOurRotation(i);
-                      setOppRotation((i + 1) % 6);
-                    }
+                    setOurRotation(i);
+                    setOppRotation(0);
                     setServingUs(nextServingUs);
                     // Apply pending switch if user selected Yes
                     if (setResultModal?._pendingSwitch) setSwitchSides(s => !s);
@@ -3939,18 +3915,14 @@ function SideStats({ gameState, stats, roster, touches, rallies, rallyActive, un
 function HeatmapView({ rallies, switchSides }) {
   const [filter, setFilter] = useState('all');
 
-  // SVG court dimensions — horizontal layout
-  const W = 900, H = 400;
-  // Court boundary (with margin for out-of-bounds)
-  const MARGIN = 40;
-  const CW = W - MARGIN * 2; // court width
-  const CH = H - MARGIN * 2; // court height
-  const CX = MARGIN, CY = MARGIN; // court top-left
+  const W = 900, H = 380;
+  const MARGIN = 44;
+  const CW = W - MARGIN * 2;
+  const CH = H - MARGIN * 2;
+  const CX = MARGIN, CY = MARGIN;
 
-  // Grid: 10 cols x 6 rows for horizontal court
-  const GCOLS = 10, GROWS = 6;
-  const CW_FRAC = CW / W; // fraction of width that is court
-  const CH_FRAC = CH / H;
+  // Fine grid for smooth heatmap
+  const GCOLS = 24, GROWS = 12;
 
   const FILTERS = [
     { id:'all',     label:'All' },
@@ -3961,7 +3933,7 @@ function HeatmapView({ rallies, switchSides }) {
     { id:'block',   label:'Blocks' },
   ];
 
-  // Build counts — map xy (0-1, 0=opp top, 1=our bottom) to SVG grid cells
+  // Accumulate raw counts
   const counts = {};
   FILTERS.forEach(f => {
     counts[f.id] = Array(GROWS).fill(null).map(() => Array(GCOLS).fill(0));
@@ -3970,54 +3942,156 @@ function HeatmapView({ rallies, switchSides }) {
   FILTERS.forEach(f => { totals[f.id] = 0; });
 
   rallies.forEach(r => {
+    const arrows = r.arrows || [];
+
     r.touches.forEach((t, idx) => {
       if (!t.xy) return;
-      let x = t.xy.x, y = t.xy.y;
-      if (switchSides) { x = 1-x; y = 1-y; }
-
-      // Horizontal court: y (opp→our) → col (left→right), x (left→right) → row (top→bottom)
-      const svgCol = CX + y * CW; // y maps to horizontal position
-      const svgRow = CY + x * CH; // x maps to vertical position
-      const col = Math.min(GCOLS-1, Math.floor(svgCol / W * GCOLS));
-      const row = Math.min(GROWS-1, Math.floor(svgRow / H * GROWS));
 
       const isServeReceive = t.action==='receive' && t.team==='our' &&
         r.touches.slice(0,idx).every(p => p.team==='opp');
       const isDig = t.action==='receive' && !isServeReceive;
       const isOur = t.team==='our';
+      const isAttack = t.action==='attack' && isOur;
+      const isServe = (t.action==='spin'||t.action==='float') && isOur;
 
-      const cats = ['all'];
-      if (t.action==='attack' && isOur)                    cats.push('attack');
-      if ((t.action==='spin'||t.action==='float') && isOur) cats.push('serve');
-      if (isServeReceive)                                   cats.push('receive');
-      if (isDig && isOur)                                   cats.push('dig');
-      if (t.action==='block' && isOur)                     cats.push('block');
+      // For attacks and serves: use ball destination (floor arrow toX/toY)
+      // For receives and digs: use player position (t.xy)
+      let plotXY = null;
 
-      cats.forEach(c => { counts[c][row][col]++; totals[c]++; });
+      if (isAttack || isServe) {
+        // Find the floor arrow that originates from this player at this touch index
+        const arr = arrows.find(a => a.fromId === t.playerId && a.toType === 'floor');
+        if (arr && arr.courtWidth && arr.courtHeight) {
+          // Normalise stored pixel coords back to 0-1
+          const nx = arr.toX / arr.courtWidth;
+          const ny = arr.toY / arr.courtHeight;
+          plotXY = { x: nx, y: ny };
+        } else if (arr) {
+          // No stored court dims — skip, can't reliably normalise
+          plotXY = null;
+        }
+      } else if (isServeReceive || isDig || (t.action==='block' && isOur)) {
+        // Use player position
+        plotXY = t.xy;
+      } else {
+        // All touches: use player position for 'all' filter
+        plotXY = t.xy;
+      }
+
+      // For 'all' filter always use player position
+      const allXY = t.xy;
+
+      const cats = [];
+      if (isAttack && plotXY)    cats.push({ cat:'attack',  xy: plotXY });
+      if (isServe && plotXY)     cats.push({ cat:'serve',   xy: plotXY });
+      if (isServeReceive)        cats.push({ cat:'receive', xy: t.xy });
+      if (isDig && isOur)        cats.push({ cat:'dig',     xy: t.xy });
+      if (t.action==='block' && isOur) cats.push({ cat:'block', xy: t.xy });
+      // All filter uses player position
+      cats.push({ cat:'all', xy: allXY });
+
+      cats.forEach(({ cat, xy }) => {
+        if (!xy) return;
+        let px = xy.x, py = xy.y;
+        if (switchSides) { px = 1-px; py = 1-py; }
+
+        const svgCol = CX + py * CW;
+        // Invert x so left side of court = bottom of heatmap, right = top
+        const svgRow = CY + (1 - px) * CH;
+        const col = Math.min(GCOLS-1, Math.max(0, Math.floor((svgCol - CX) / CW * GCOLS)));
+        const row = Math.min(GROWS-1, Math.max(0, Math.floor((svgRow - CY) / CH * GROWS)));
+
+        counts[cat][row][col]++;
+        totals[cat]++;
+      });
     });
   });
 
+  // Gaussian blur — spread each cell's value across neighbours for smooth look
+  function gaussianSmooth(grid, rows, cols, sigma = 1.2) {
+    const out = Array(rows).fill(null).map(() => Array(cols).fill(0));
+    const radius = Math.ceil(sigma * 2.5);
+    // Build kernel
+    const kernel = [];
+    let ksum = 0;
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const w = Math.exp(-(dx*dx + dy*dy) / (2*sigma*sigma));
+        kernel.push({dy, dx, w});
+        ksum += w;
+      }
+    }
+    kernel.forEach(k => { k.w /= ksum; });
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (grid[r][c] === 0) continue;
+        kernel.forEach(({dy, dx, w}) => {
+          const nr = r+dy, nc = c+dx;
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+            out[nr][nc] += grid[r][c] * w;
+          }
+        });
+      }
+    }
+    return out;
+  }
+
+  // Interpolate through heatmap colour stops
+  function heatColor(t) {
+    // t = 0..1, returns rgba string
+    // Colour stops: 0=transparent blue, 0.25=blue, 0.5=green, 0.7=yellow, 0.85=orange, 1=red
+    const stops = [
+      {t:0,    r:30,  g:100, b:255, a:0   },
+      {t:0.15, r:30,  g:100, b:255, a:0.35},
+      {t:0.35, r:0,   g:200, b:180, a:0.55},
+      {t:0.55, r:60,  g:220, b:0,   a:0.65},
+      {t:0.72, r:255, g:220, b:0,   a:0.72},
+      {t:0.87, r:255, g:100, b:0,   a:0.80},
+      {t:1,    r:255, g:0,   b:0,   a:0.88},
+    ];
+    if (t <= 0) return 'rgba(0,0,0,0)';
+    if (t >= 1) return `rgba(255,0,0,0.88)`;
+    let lo = stops[0], hi = stops[1];
+    for (let i = 1; i < stops.length; i++) {
+      if (t <= stops[i].t) { lo = stops[i-1]; hi = stops[i]; break; }
+    }
+    const f = (t - lo.t) / (hi.t - lo.t);
+    const r = Math.round(lo.r + (hi.r-lo.r)*f);
+    const g = Math.round(lo.g + (hi.g-lo.g)*f);
+    const b = Math.round(lo.b + (hi.b-lo.b)*f);
+    const a = (lo.a + (hi.a-lo.a)*f).toFixed(2);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
   const availableFilters = FILTERS.filter(f => totals[f.id] > 0);
   const activeFilter = totals[filter] > 0 ? filter : 'all';
-  const grid = counts[activeFilter];
+  const rawGrid = counts[activeFilter];
   const total = totals[activeFilter];
-  const posMax = Math.max(1, ...grid.flat());
 
-  const heatColor = (count) => {
-    if (count === 0) return null;
-    const i = count / posMax;
-    if (i <= 0.20) return 'rgba(30,100,255,0.4)';
-    if (i <= 0.40) return 'rgba(0,180,80,0.5)';
-    if (i <= 0.65) return 'rgba(220,180,0,0.6)';
-    if (i <= 0.85) return 'rgba(255,110,0,0.65)';
-    return 'rgba(255,30,30,0.75)';
-  };
+  if (total === 0) {
+    return <Text style={[s.emptyText,{padding:20}]}>No touch data yet — play some rallies first.</Text>;
+  }
+
+  // Apply gaussian smoothing
+  const smoothed = gaussianSmooth(rawGrid, GROWS, GCOLS, 1.4);
+  const maxVal = Math.max(0.001, ...smoothed.flat());
 
   const cellW = W / GCOLS;
   const cellH = H / GROWS;
 
-  if (posMax <= 1 && total === 0) {
-    return <Text style={[s.emptyText,{padding:20}]}>No touch data yet — play some rallies first.</Text>;
+  // Build colour rects
+  const rects = [];
+  for (let ri = 0; ri < GROWS; ri++) {
+    for (let ci = 0; ci < GCOLS; ci++) {
+      const val = smoothed[ri][ci];
+      if (val < maxVal * 0.03) continue; // skip near-zero cells
+      const t = val / maxVal;
+      const color = heatColor(t);
+      const x = ci * cellW;
+      const y = ri * cellH;
+      rects.push({ x, y, color, key: `${ri}-${ci}` });
+    }
   }
 
   return (
@@ -4039,87 +4113,83 @@ function HeatmapView({ rallies, switchSides }) {
         ))}
       </ScrollView>
 
-      {/* SVG Court + Heatmap — fixed height to fit on screen */}
+      {/* SVG Court + Heatmap */}
       <Svg width="100%" height={260} viewBox={`0 0 ${W} ${H}`}
-        style={{borderRadius:8}} preserveAspectRatio="xMidYMid meet">
+        style={{borderRadius:10}} preserveAspectRatio="xMidYMid meet">
 
         {/* Background */}
-        <Rect x={0} y={0} width={W} height={H} fill="#090B11" rx={8} />
+        <Rect x={0} y={0} width={W} height={H} fill="#08090F" rx={10} />
 
-        {/* Out of bounds area hint */}
-        <Rect x={0} y={0} width={W} height={H} fill="rgba(0,0,0,0)" />
-
-        {/* Court half tints — left=opponent (unless switched), right=our team */}
+        {/* Court half tints */}
         <Rect x={CX} y={CY} width={CW/2} height={CH}
-          fill={switchSides ? "rgba(181,123,238,0.06)" : "rgba(232,114,122,0.06)"} />
+          fill={switchSides ? "rgba(168,85,247,0.05)" : "rgba(244,63,94,0.05)"} />
         <Rect x={CX+CW/2} y={CY} width={CW/2} height={CH}
-          fill={switchSides ? "rgba(232,114,122,0.06)" : "rgba(181,123,238,0.06)"} />
+          fill={switchSides ? "rgba(244,63,94,0.05)" : "rgba(168,85,247,0.05)"} />
 
-        {/* Heatmap cells */}
-        {grid.map((row, ri) =>
-          row.map((count, ci) => {
-            const color = heatColor(count);
-            if (!color) return null;
-            const pct = total > 0 ? Math.round(count/total*100) : 0;
-            const x = ci * cellW;
-            const y = ri * cellH;
-            const isOut = x < CX || x+cellW > CX+CW || y < CY || y+cellH > CY+CH;
-            return (
-              <G key={`${ri}-${ci}`}>
-                <Rect x={x} y={y} width={cellW} height={cellH}
-                  fill={color} rx={isOut ? 4 : 0} />
-                <SvgText x={x+cellW/2} y={y+cellH/2-5}
-                  fill="white" fontSize={isOut?14:18}
-                  fontWeight="700" textAnchor="middle">{count}</SvgText>
-                <SvgText x={x+cellW/2} y={y+cellH/2+12}
-                  fill="rgba(255,255,255,0.7)" fontSize={12}
-                  textAnchor="middle">{pct}%</SvgText>
-              </G>
-            );
-          })
-        )}
+        {/* Heatmap colour cells — drawn before court lines so lines sit on top */}
+        {rects.map(({x, y, color, key}) => (
+          <Rect key={key} x={x} y={y} width={cellW+0.5} height={cellH+0.5} fill={color} />
+        ))}
 
-        {/* Attack lines — vertical at 3m from net */}
+        {/* Subtle grid lines inside court only */}
+        {Array.from({length: GCOLS-1}, (_,i) => {
+          const x = CX + (i+1) * (CW/GCOLS);
+          if (x <= CX || x >= CX+CW) return null;
+          return <Line key={`vg${i}`} x1={x} y1={CY} x2={x} y2={CY+CH}
+            stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />;
+        })}
+        {Array.from({length: GROWS-1}, (_,i) => {
+          const y = CY + (i+1) * (CH/GROWS);
+          if (y <= CY || y >= CY+CH) return null;
+          return <Line key={`hg${i}`} x1={CX} y1={y} x2={CX+CW} y2={y}
+            stroke="rgba(255,255,255,0.04)" strokeWidth={0.5} />;
+        })}
+
+        {/* Attack lines at 3m */}
         <Line x1={CX+CW/3} y1={CY} x2={CX+CW/3} y2={CY+CH}
-          stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="8,6" />
+          stroke="rgba(255,255,255,0.22)" strokeWidth={1.5} strokeDasharray="6,5" />
         <Line x1={CX+CW*2/3} y1={CY} x2={CX+CW*2/3} y2={CY+CH}
-          stroke="rgba(255,255,255,0.2)" strokeWidth={2} strokeDasharray="8,6" />
+          stroke="rgba(255,255,255,0.22)" strokeWidth={1.5} strokeDasharray="6,5" />
 
         {/* Court boundary */}
         <Rect x={CX} y={CY} width={CW} height={CH}
-          fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth={3} />
+          fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth={2.5} />
 
-        {/* Net — vertical line in middle of horizontal court */}
-        <Rect x={CX+CW/2-4} y={CY-8} width={8} height={CH+16}
-          fill="#B57BEE" rx={4} />
+        {/* Net */}
+        <Rect x={CX+CW/2-3} y={CY-6} width={6} height={CH+12}
+          fill="#A855F7" rx={3} />
 
-        {/* Labels */}
-        <SvgText x={CX+CW/4} y={CY+CH/2+5}
-          fill={switchSides ? "rgba(181,123,238,0.7)" : "rgba(232,114,122,0.7)"}
-          fontSize={16} textAnchor="middle" letterSpacing={3}>
-          {switchSides ? 'OUR TEAM' : 'OPPONENT'}
-        </SvgText>
-        <SvgText x={CX+CW*3/4} y={CY+CH/2+5}
-          fill={switchSides ? "rgba(232,114,122,0.7)" : "rgba(181,123,238,0.7)"}
-          fontSize={16} textAnchor="middle" letterSpacing={3}>
-          {switchSides ? 'OPPONENT' : 'OUR TEAM'}
-        </SvgText>
-        <SvgText x={5} y={14} fill="rgba(255,255,255,0.25)"
-          fontSize={11} textAnchor="start">OUT</SvgText>
-        <SvgText x={W-5} y={H-4} fill="rgba(255,255,255,0.25)"
-          fontSize={11} textAnchor="end">OUT</SvgText>
-        <SvgText x={CX+CW/2} y={CY-8} fill="white"
-          fontSize={13} textAnchor="middle" fontWeight="700">NET</SvgText>
+        {/* Zone labels — 3m lines */}
+        <SvgText x={CX+CW/6} y={CY-10} fill="rgba(244,63,94,0.7)"
+          fontSize={16} textAnchor="middle">OPPONENT</SvgText>
+        <SvgText x={CX+CW*5/6} y={CY-10} fill="rgba(168,85,247,0.7)"
+          fontSize={16} textAnchor="middle">OUR TEAM</SvgText>
+        <SvgText x={8} y={14} fill="rgba(255,255,255,0.2)" fontSize={13}>OUT</SvgText>
+        <SvgText x={W-8} y={H-6} fill="rgba(255,255,255,0.2)" fontSize={13} textAnchor="end">OUT</SvgText>
       </Svg>
 
-      {/* Legend */}
-      <View style={{flexDirection:'row', gap:4, justifyContent:'center',
-        marginTop:8, alignItems:'center'}}>
-        {['rgba(30,100,255,0.6)','rgba(0,180,80,0.65)','rgba(220,180,0,0.7)',
-          'rgba(255,110,0,0.75)','rgba(255,30,30,0.85)'].map((c,i) => (
-          <View key={i} style={{width:28, height:12, borderRadius:2, backgroundColor:c}} />
-        ))}
-        <Text style={{color:C.dim, fontSize:fs(9), marginLeft:4}}>Low → Hot</Text>
+      {/* Colour scale legend */}
+      <View style={{flexDirection:'row', alignItems:'center', gap:6, marginTop:8, justifyContent:'center'}}>
+        <Text style={{color:C.muted, fontSize:fs(10), fontFamily:'Barlow_500Medium'}}>Low</Text>
+        <Svg width={160} height={12}>
+          {Array.from({length:40}, (_,i) => {
+            const t = i/39;
+            const stops = [
+              {t:0,r:30,g:100,b:255},{t:0.35,r:0,g:200,b:180},
+              {t:0.55,r:60,g:220,b:0},{t:0.72,r:255,g:220,b:0},
+              {t:0.87,r:255,g:100,b:0},{t:1,r:255,g:0,b:0},
+            ];
+            let lo=stops[0],hi=stops[1];
+            for(let j=1;j<stops.length;j++){if(t<=stops[j].t){lo=stops[j-1];hi=stops[j];break;}}
+            const f=(t-lo.t)/(hi.t-lo.t||1);
+            const r=Math.round(lo.r+(hi.r-lo.r)*f);
+            const g=Math.round(lo.g+(hi.g-lo.g)*f);
+            const b=Math.round(lo.b+(hi.b-lo.b)*f);
+            return <Rect key={i} x={i*4} y={0} width={4} height={12}
+              fill={`rgb(${r},${g},${b})`} />;
+          })}
+        </Svg>
+        <Text style={{color:C.muted, fontSize:fs(10), fontFamily:'Barlow_500Medium'}}>High</Text>
       </View>
       <Text style={{color:C.muted, fontSize:fs(10), textAlign:'center', marginTop:4}}>
         {total} touches · {activeFilter}
