@@ -23,6 +23,7 @@ const { width: SW, height: SH } = Dimensions.get('window');
 // Haptic feedback — disabled
 const haptic = () => {};
 const IS_TABLET = SW > 700;
+const IS_MOBILE = SW <= 700;
 // fs() is identity — fixed sizes work well across iPad Air and laptop
 const fs = (size) => size;
 
@@ -1809,6 +1810,9 @@ ${gsData.matchNotes ? `
 
   const [scoreCorrectModal, setScoreCorrectModal] = useState(false);
   const [matchNotes, setMatchNotes] = useState(''); // coaching notes for the match
+  const [rotationLocked, setRotationLocked] = useState(false);
+  const [mobileStatsOpen, setMobileStatsOpen] = useState(false); // mobile bottom sheet // lock rotation for training
+  const [lockedRotation, setLockedRotation] = useState(0); // which rotation is locked
 
   // ── SUBSTITUTIONS ────────────────────────────────────────────────────────────
   const [subModal, setSubModal]       = useState(false);
@@ -2266,13 +2270,21 @@ ${gsData.matchNotes ? `
     const newOurScore   = weWon ? gameState.ourScore + 1 : gameState.ourScore;
     const newTheirScore = !weWon ? gameState.theirScore + 1 : gameState.theirScore;
 
-    // Rotation logic
-    if (weWon && !servingUs) {
-      setOurRotation(r => (r + 1) % 6);
-      setServingUs(true);
-    } else if (!weWon && servingUs) {
-      setOppRotation(r => (r + 1) % 6);
-      setServingUs(false);
+    // Rotation logic — skip if locked
+    if (!rotationLocked) {
+      if (weWon && !servingUs) {
+        setOurRotation(r => (r + 1) % 6);
+        setServingUs(true);
+      } else if (!weWon && servingUs) {
+        setOppRotation(r => (r + 1) % 6);
+        setServingUs(false);
+      }
+    } else {
+      // Locked: always reset to locked rotation, only flip serve
+      setOurRotation(lockedRotation);
+      setOppRotation(0);
+      if (weWon && !servingUs) setServingUs(true);
+      else if (!weWon && servingUs) setServingUs(false);
     }
 
     // Check if set is won
@@ -2383,6 +2395,8 @@ ${gsData.matchNotes ? `
         subsUsed,
         subLog,
         matchNotes,
+        rotationLocked,
+        lockedRotation,
         savedAt: Date.now(),
       };
       AsyncStorage.setItem(STORAGE_MATCH, JSON.stringify(snapshot));
@@ -2478,7 +2492,9 @@ ${gsData.matchNotes ? `
               if (snap.switchSides !== undefined) setSwitchSides(snap.switchSides);
               if (snap.subsUsed    !== undefined) setSubsUsed(snap.subsUsed);
               if (snap.subLog)                  setSubLog(snap.subLog);
-              if (snap.matchNotes !== undefined) setMatchNotes(snap.matchNotes);
+              if (snap.matchNotes !== undefined)  setMatchNotes(snap.matchNotes);
+              if (snap.rotationLocked !== undefined) setRotationLocked(snap.rotationLocked);
+              if (snap.lockedRotation !== undefined) setLockedRotation(snap.lockedRotation);
             }
           } catch(e) { console.log('Restore error', e); }
           setScreen('match');
@@ -2566,8 +2582,79 @@ ${gsData.matchNotes ? `
             onToggleTheme={() => setIsDark(d => !d)}
             isDark={isDark}
             matchNotes={matchNotes}
-            setMatchNotes={setMatchNotes} />}
+            setMatchNotes={setMatchNotes}
+            rotationLocked={rotationLocked}
+            setRotationLocked={setRotationLocked}
+            lockedRotation={lockedRotation}
+            setLockedRotation={setLockedRotation}
+            ourRoster={ourRoster}
+            setOurRoster={setOurRoster}
+            oppRoster={oppRoster}
+            setOppRoster={setOppRoster}
+            onEndMatch={() => {
+              setScreen('setup');
+              setRallies([]);
+              setOurRotation(0);
+              setOppRotation(0);
+              setServingUs(true);
+              setSwitchSides(false);
+              setSubsUsed(0);
+              setSubLog([]);
+              setMatchNotes('');
+              setRotationLocked(false);
+              setGameState(g => ({...g, ourScore:0, theirScore:0, ourSets:0, theirSets:0, currentSet:1, setHistory:[], matchOver:false}));
+            }} />}
         </View>
+
+        {IS_MOBILE && page === 'match' && (
+          <>
+            {/* Floating stats button */}
+            <TouchableOpacity
+              style={{
+                position:'absolute', bottom: 72, right: 16, zIndex: 100,
+                width: 52, height: 52, borderRadius: 26,
+                backgroundColor: C.accent, alignItems:'center', justifyContent:'center',
+                shadowColor:'#000', shadowOpacity:0.3, shadowRadius:8, shadowOffset:{width:0,height:4},
+              }}
+              onPress={() => setMobileStatsOpen(true)}
+            >
+              <Text style={{color:'#fff', fontSize: 22, fontWeight:'700', lineHeight:26}}>≡</Text>
+            </TouchableOpacity>
+
+            {/* Mobile bottom sheet */}
+            <Modal visible={mobileStatsOpen} transparent animationType="slide">
+              <TouchableOpacity
+                style={{flex:1, backgroundColor:'rgba(0,0,0,0.5)'}}
+                activeOpacity={1}
+                onPress={() => setMobileStatsOpen(false)}
+              />
+              <View style={{
+                backgroundColor: C.card, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+                borderWidth:1, borderColor: C.border, maxHeight: '80%',
+              }}>
+                {/* Handle */}
+                <View style={{alignItems:'center', paddingTop:10, paddingBottom:6}}>
+                  <View style={{width:36, height:4, borderRadius:2, backgroundColor:C.muted}} />
+                </View>
+                <ScrollView contentContainerStyle={{padding:16, gap:10}}>
+                  <SideStats
+                    gameState={gameState} stats={stats}
+                    roster={ourRoster} touches={touches}
+                    rallies={rallies} rallyActive={rallyActive}
+                    undoLastTouch={() => { undoLastTouch(); setMobileStatsOpen(false); }}
+                    ourRotation={ourRotation}
+                    subsUsed={subsUsed}
+                    onSubPress={() => { setSubOutPlayer(null); setSubModal(true); setMobileStatsOpen(false); }}
+                    onOppSubPress={() => { setOppSubOut(null); setOppSubInNum(''); setOppSubModal(true); setMobileStatsOpen(false); }}
+                    onToggleTheme={() => setIsDark(d => !d)}
+                    isDark={isDark}
+                    switchSides={switchSides}
+                  />
+                </ScrollView>
+              </View>
+            </Modal>
+          </>
+        )}
 
         {IS_TABLET && (
           <View style={s.sidePanel}>
@@ -4881,7 +4968,7 @@ function HistoryPanel({ rallies, switchSides }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SETUP PANEL
 // ─────────────────────────────────────────────────────────────────────────────
-function SetupPanel({ gameState, setGameState, ourRotation, setOurRotation, onExport, onPDFExport, onGoToSetup, onToggleTheme, isDark, matchNotes, setMatchNotes }) {
+function SetupPanel({ gameState, setGameState, ourRotation, setOurRotation, onExport, onPDFExport, onGoToSetup, onToggleTheme, isDark, matchNotes, setMatchNotes, rotationLocked, setRotationLocked, lockedRotation, setLockedRotation, ourRoster, setOurRoster, oppRoster, setOppRoster, onEndMatch }) {
   return (
     <ScrollView contentContainerStyle={{padding:14,gap:12}}>
       <TouchableOpacity
@@ -4941,37 +5028,114 @@ function SetupPanel({ gameState, setGameState, ourRotation, setOurRotation, onEx
         </View>
       </View>
 
+      {/* Rotation — single card handles both selecting and locking */}
       <View style={s.card}>
-        <Text style={s.setupTitle}>Starting Rotation</Text>
-        <Text style={{color:C.dim,fontSize:12,marginBottom:10}}>
-          Select which rotation your team starts in (1 = setter serves first).
+        <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+          <View style={{flex:1}}>
+            <Text style={s.setupTitle}>Rotation</Text>
+            <Text style={{color:C.dim, fontSize:fs(11), marginTop:2}}>
+              {rotationLocked
+                ? `Locked to ROT ${ourRotation+1} — won't change after rallies`
+                : 'Tap to change · toggle lock to hold in training'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={{paddingHorizontal:14, paddingVertical:8, borderRadius:10,
+              backgroundColor: rotationLocked ? C.amber+'22' : C.surface,
+              borderWidth:1.5, borderColor: rotationLocked ? C.amber : C.border}}
+            onPress={() => setRotationLocked(r => !r)}
+          >
+            <Text style={{color: rotationLocked ? C.amber : C.dim,
+              fontSize:fs(13), fontFamily:'Barlow_700Bold'}}>
+              {rotationLocked ? 'Locked' : 'Lock'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{flexDirection:'row', flexWrap:'wrap', gap:6}}>
+          {[0,1,2,3,4,5].map(i => {
+            const isActive = ourRotation === i;
+            return (
+              <TouchableOpacity key={i}
+                style={{paddingHorizontal:12, paddingVertical:6, borderRadius:8,
+                  backgroundColor: isActive ? (rotationLocked ? C.amber+'22' : C.accent+'22') : C.surface,
+                  borderWidth:1.5, borderColor: isActive ? (rotationLocked ? C.amber : C.accent) : C.border}}
+                onPress={() => {
+                  setOurRotation(i);
+                  setLockedRotation(i);
+                  setOppRotation(0);
+                }}>
+                <Text style={{
+                  color: isActive ? (rotationLocked ? C.amber : C.accent) : C.dim,
+                  fontSize:fs(12), fontFamily:'Barlow_600SemiBold'}}>
+                  ROT {i+1}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* End Match / New Match */}
+      <View style={s.card}>
+        <Text style={s.setupTitle}>Match Controls</Text>
+        <Text style={{color:C.dim, fontSize:fs(11), marginBottom:10}}>
+          End the current match and start fresh without reloading the page.
         </Text>
-        <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
-          {[0,1,2,3,4,5].map(i => (
-            <TouchableOpacity
-              key={i}
-              style={[s.rotBtn, ourRotation===i && s.rotBtnSel]}
-              onPress={() => setOurRotation(i)}
-            >
-              <Text style={[s.rotBtnText, ourRotation===i && {color:C.accent}]}>ROT {i+1}</Text>
-            </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.bigBtn, {backgroundColor:'rgba(239,68,68,0.15)', borderWidth:1.5, borderColor:C.red}]}
+          onPress={onEndMatch}
+        >
+          <Text style={[s.bigBtnText, {color:C.red}]}>End Match & Start New</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Editable Opponent Numbers */}
+      <View style={s.card}>
+        <Text style={s.setupTitle}>Opponent Numbers</Text>
+        <Text style={{color:C.dim, fontSize:fs(11), marginBottom:10}}>Edit opponent jersey numbers by position</Text>
+        <View style={{flexDirection:'row', flexWrap:'wrap', gap:8}}>
+          {oppRoster && oppRoster.map(p => (
+            <View key={p.id} style={{alignItems:'center', gap:4}}>
+              <Text style={{fontSize:fs(10), color:C.muted, fontFamily:'Barlow_500Medium'}}>{p.role}</Text>
+              <TextInput
+                style={[s.input, {width:56, textAlign:'center', fontFamily:'Barlow_700Bold', fontSize:fs(14), padding:6}]}
+                value={String(p.num || '')}
+                onChangeText={v => setOppRoster(prev => prev.map(pl => pl.id===p.id ? {...pl, num: v.replace(/[^0-9]/g,'')} : pl))}
+                keyboardType="numeric" maxLength={3}
+                placeholder="—"
+                placeholderTextColor={C.muted}
+              />
+            </View>
           ))}
         </View>
       </View>
 
+      {/* Editable Roster */}
       <View style={s.card}>
         <Text style={s.setupTitle}>Roster</Text>
-        {DEFAULT_OUR_ROSTER.map(p => (
+        <Text style={{color:C.dim, fontSize:fs(11), marginBottom:10}}>Tap name or number to edit</Text>
+        {ourRoster && ourRoster.map(p => (
           <View key={p.id} style={{flexDirection:'row',gap:8,paddingVertical:7,borderBottomWidth:1,borderBottomColor:C.border,alignItems:'center'}}>
-            <Text style={{color:C.accent,fontWeight:'600',minWidth:30}}>#{p.num}</Text>
-            <Text style={{flex:1,color:C.text}}>{p.name}</Text>
+            <TextInput
+              style={[s.input, {width:48, textAlign:'center', fontFamily:'Barlow_700Bold', fontSize:fs(13), padding:6}]}
+              value={String(p.num)}
+              onChangeText={v => setOurRoster(prev => prev.map(pl => pl.id===p.id ? {...pl, num: v.replace(/[^0-9]/g,'')} : pl))}
+              keyboardType="numeric" maxLength={3}
+              placeholderTextColor={C.muted}
+            />
+            <TextInput
+              style={[s.input, {flex:1, fontSize:fs(13), padding:6}]}
+              value={p.name}
+              onChangeText={v => setOurRoster(prev => prev.map(pl => pl.id===p.id ? {...pl, name: v} : pl))}
+              placeholder="Player name"
+              placeholderTextColor={C.muted}
+            />
             <Text style={[s.posBadge, {
               color:p.pos==='S'?C.accent:p.pos==='OPP'?C.oppTeam:p.pos==='L'?C.amber:C.green,
               borderColor:p.pos==='S'?C.accent:p.pos==='OPP'?C.oppTeam:p.pos==='L'?C.amber:C.green,
             }]}>{p.pos}</Text>
           </View>
         ))}
-        <Text style={{color:C.muted,fontSize:12,marginTop:10}}>Roster editing coming in next version.</Text>
       </View>
     </ScrollView>
   );
@@ -5001,10 +5165,10 @@ const makeStyles = (C) => StyleSheet.create({
   sidePanel: {width:Math.min(280, SW * 0.22), backgroundColor:C.bg, borderLeftWidth:1, borderLeftColor:C.border+'66'},
 
   // Score bar
-  scoreBar:   {flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:C.bg,paddingHorizontal:20,paddingVertical:10,borderBottomWidth:1,borderBottomColor:C.border+'88'},
+  scoreBar:   {flexDirection:'row',justifyContent:'space-between',alignItems:'center',backgroundColor:C.bg,paddingHorizontal:IS_MOBILE?12:20,paddingVertical:IS_MOBILE?6:10,borderBottomWidth:1,borderBottomColor:C.border+'88'},
   scoreSide:  {minWidth:120},
   teamName:   {fontSize:fs(11),color:C.muted,letterSpacing:2,textTransform:'uppercase',fontFamily:'Barlow_600SemiBold'},
-  scoreNum:   {fontSize:fs(52),fontWeight:'700',lineHeight:56,color:C.text,fontFamily:'Barlow_700Bold',letterSpacing:-1},
+  scoreNum:   {fontSize:IS_MOBILE?fs(38):fs(52),fontWeight:'700',lineHeight:IS_MOBILE?42:56,color:C.text,fontFamily:'Barlow_700Bold',letterSpacing:-1},
   scoreCenter:{alignItems:'center'},
   setLabel:   {fontSize:fs(14),fontWeight:'600',color:C.text,letterSpacing:1,fontFamily:'Barlow_600SemiBold'},
   servingDot:    {width:8,height:8,borderRadius:4,backgroundColor:C.accent},
@@ -5036,7 +5200,7 @@ const makeStyles = (C) => StyleSheet.create({
   floorDot:   {position:'absolute',width:14,height:14,borderRadius:7,backgroundColor:C.red,borderWidth:2,borderColor:'#fff'},
 
   // Players
-  playerCircle:{position:'absolute',width:fs(76),height:fs(76),borderRadius:fs(38),alignItems:'center',justifyContent:'center',borderWidth:2.5},
+  playerCircle:{position:'absolute',width:IS_MOBILE?fs(88):fs(76),height:IS_MOBILE?fs(88):fs(76),borderRadius:IS_MOBILE?fs(44):fs(38),alignItems:'center',justifyContent:'center',borderWidth:2.5},
   ourCircle:    {backgroundColor:'#4A2D7A'},
   liberoCircle: {backgroundColor:'#7A5C10'},
   oppCircle:       {backgroundColor:'#7A2830'},
@@ -5104,7 +5268,7 @@ const makeStyles = (C) => StyleSheet.create({
   modalOutcome:    {padding:12,borderRadius:10,borderWidth:1.5,alignItems:'center'},
   modalOutcomeText:{fontSize:fs(15),fontWeight:'700'},
   modalBtnRow:     {flexDirection:'row',gap:8},
-  modalBtn:        {flex:1,padding:12,borderRadius:8,borderWidth:1,alignItems:'center'},
+  modalBtn:        {flex:1,padding:IS_MOBILE?16:12,borderRadius:8,borderWidth:1,alignItems:'center'},
   modalBtnText:    {fontSize:fs(13),fontWeight:'600'},
 
   // Side panel
@@ -5149,7 +5313,7 @@ const makeStyles = (C) => StyleSheet.create({
 
   // Misc
   emptyText:    {textAlign:'center',color:C.muted,fontSize:fs(13)},
-  navBar:       {flexDirection:'row',backgroundColor:C.bg,borderTopWidth:1,borderTopColor:C.border+'66'},
+  navBar:       {flexDirection:'row',backgroundColor:C.bg,borderTopWidth:1,borderTopColor:C.border+'66',paddingBottom:IS_MOBILE?8:0},
   navBtn:       {flex:1,alignItems:'center',paddingBottom:10,gap:4},
   navActiveLine:{height:2,width:'60%',borderRadius:1,backgroundColor:'transparent',marginBottom:0},
   navLabel:     {fontSize:fs(10),fontWeight:'500',fontFamily:'Barlow_500Medium'},
