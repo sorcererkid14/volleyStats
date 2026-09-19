@@ -1,6 +1,6 @@
 [build]
-  command = "npx expo export --platform web && cp manifest.json web-build/ && cp service-worker.js web-build/ && cp -r icons web-build/"
-  publish = "web-build"
+  command = "npx expo export --platform web && cp manifest.json dist/ && cp service-worker.js dist/ && cp -r icons dist/"
+  publish = "dist"
 
 [[headers]]
   for = "/service-worker.js"
