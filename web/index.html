@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
     <!-- PWA -->
     <meta name="theme-color" content="#A855F7" />
@@ -18,28 +18,24 @@
 
     <title>VolleyStats</title>
     <style>
-      html, body, #root { 
-        background-color: #0A0C14; 
-        margin: 0; 
-        padding: 0; 
-        height: 100%;
-        width: 100%;
-      }
+      html, body { background-color: #0A0C14; margin: 0; padding: 0; }
     </style>
   </head>
   <body>
     <div id="root"></div>
+    %SCRIPT%
 
     <script>
-      // Register service worker for offline support
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
           navigator.serviceWorker.register('/service-worker.js')
             .then(function (reg) {
-              console.log('VolleyStats SW registered:', reg.scope);
+              console.log('SW registered:', reg.scope);
+              // Check for updates every time the page loads
+              reg.update();
             })
             .catch(function (err) {
-              console.warn('SW registration failed:', err);
+              console.log('SW failed:', err);
             });
         });
       }
